@@ -1,0 +1,17 @@
+{
+  "version": 6,
+  "configurePresets": [
+    {
+      "name": "debug-wgpu",
+      "displayName": "Debug (WGPU Native)",
+      "description": "Debug build, with testing disabled, using WebGPU Native.",
+      "binaryDir": "${sourceDir}/build/cmake-build-debug",
+      "generator": "Ninja",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "BUILD_SHARED_LIBS": "OFF",
+        "WEBGPU_BACKEND": "WGPU"
+      }
+    }
+  ]
+}

@@ -1,0 +1,185 @@
+# Generated from CLion Inspection settings
+---
+Checks: '-*,
+mpi-*,
+bugprone-*,
+-bugprone-switch-missing-default-case,
+-bugprone-signal-handler,
+-bugprone-narrowing-conversions,
+-bugprone-chained-comparison,
+-bugprone-casting-through-void,
+-bugprone-redundant-branch-condition,
+-bugprone-exception-escape,
+-bugprone-suspicious-stringview-data-usage,
+-bugprone-multiple-new-in-one-expression,
+-bugprone-unchecked-optional-access,
+-bugprone-shared-ptr-array-mismatch,
+-bugprone-implicit-widening-of-multiplication-result,
+-bugprone-signed-char-misuse,
+-bugprone-inc-dec-in-conditions,
+-bugprone-assignment-in-if-condition,
+-bugprone-incorrect-enable-if,
+-bugprone-bool-pointer-implicit-conversion,
+-bugprone-empty-catch,
+-bugprone-unhandled-exception-at-new,
+-bugprone-crtp-constructor-accessibility,
+-bugprone-optional-value-conversion,
+-bugprone-compare-pointer-to-member-virtual-function,
+-bugprone-multi-level-implicit-pointer-conversion,
+-bugprone-unsafe-functions,
+-bugprone-infinite-loop,
+-bugprone-unused-local-non-trivial-variable,
+-bugprone-easily-swappable-parameters,
+-bugprone-unique-ptr-array-mismatch,
+-bugprone-non-zero-enum-to-bool-conversion,
+-bugprone-not-null-terminated-result,
+-bugprone-standalone-empty,
+-bugprone-return-const-ref-from-parameter,
+-bugprone-stringview-nullptr,
+cert-err52-cpp,
+cert-err60-cpp,
+cert-err34-c,
+cert-str34-c,
+cert-msc50-cpp,
+cert-msc51-cpp,
+cert-dcl58-cpp,
+cert-flp30-c,
+cppcoreguidelines-pro-type-member-init,
+cppcoreguidelines-slicing,
+cppcoreguidelines-interfaces-global-init,
+cppcoreguidelines-pro-type-static-cast-downcast,
+cppcoreguidelines-narrowing-conversions,
+google-default-arguments,
+google-objc-global-variable-declaration,
+google-runtime-operator,
+google-explicit-constructor,
+google-build-using-namespace,
+google-objc-function-naming,
+hicpp-multiway-paths-covered,
+hicpp-exception-baseclass,
+misc-unconventional-assign-operator,
+misc-misplaced-const,
+misc-new-delete-overloads,
+misc-non-copyable-objects,
+misc-no-recursion,
+misc-throw-by-value-catch-by-reference,
+misc-uniqueptr-reset-release,
+modernize-*,
+-modernize-use-designated-initializers,
+-modernize-use-trailing-return-type,
+-modernize-avoid-c-arrays,
+-modernize-use-constraints,
+-modernize-min-max-use-initializer-list,
+-modernize-use-std-format,
+-modernize-use-std-numbers,
+-modernize-type-traits,
+-modernize-use-std-print,
+-modernize-use-using,
+-modernize-use-default-member-init,
+-modernize-use-auto,
+-modernize-use-starts-ends-with,
+-modernize-macro-to-enum,
+openmp-use-default-none,
+performance-*,
+-performance-noexcept-swap,
+-performance-noexcept-destructor,
+-performance-enum-size,
+-performance-no-int-to-ptr,
+-performance-avoid-endl,
+portability-simd-intrinsics,
+readability-avoid-const-params-in-decls,
+readability-redundant-smartptr-get,
+readability-make-member-function-const,
+readability-string-compare,
+readability-delete-null-pointer,
+readability-static-accessed-through-instance,
+readability-convert-member-functions-to-static,
+readability-redundant-function-ptr-dereference,
+readability-const-return-type,
+readability-misleading-indentation,
+readability-non-const-parameter,
+readability-redundant-string-cstr,
+readability-use-anyofallof,
+readability-simplify-subscript-expr,
+readability-uniqueptr-delete-release,
+readability-static-definition-in-anonymous-namespace,
+readability-redundant-declaration,
+readability-redundant-string-init,
+readability-redundant-control-flow,
+readability-misplaced-array-index,
+readability-inconsistent-declaration-parameter-name,
+readability-container-size-empty,
+readability-identifier-naming'
+
+CheckOptions:
+  - key: "readability-identifier-naming.IgnoreMainLikeFunctions"
+    value: "1"
+  - key: "readability-identifier-naming.IgnoreMacroExpansion"
+    value: "1"
+
+  # Types (Classes, structs, enums, unions, concepts, typedefs)
+  - key: "readability-identifier-naming.ClassCase"
+    value: "CamelCase"
+  - key: "readability-identifier-naming.StructCase"
+    value: "CamelCase"
+  - key: "readability-identifier-naming.EnumCase"
+    value: "CamelCase"
+  - key: "readability-identifier-naming.UnionCase"
+    value: "CamelCase"
+  - key: "readability-identifier-naming.ConceptCase"
+    value: "CamelCase"
+  - key: "readability-identifier-naming.TypedefCase"
+    value: "CamelCase"
+
+  # Global constants & enum members (kUpperCamelCase)
+  - key: "readability-identifier-naming.EnumConstantCase"
+    value: "CamelCase"
+  - key: "readability-identifier-naming.EnumConstantPrefix"
+    value: "k"
+  - key: "readability-identifier-naming.GlobalConstantCase"
+    value: "CamelCase"
+  - key: "readability-identifier-naming.GlobalConstantPrefix"
+    value: "k"
+
+  # Template parameters
+  - key: "readability-identifier-naming.TemplateParameterCase"
+    value: "CamelCase"
+
+  # Functions
+  - key: "readability-identifier-naming.FunctionCase"
+    value: "CamelCase"
+  - key: "readability-identifier-naming.MethodCase"
+    value: "CamelCase"
+  - key: "readability-identifier-naming.MethodIgnoredRegexp"
+    value: "^(c?(begin|end))$" # Ignore iterator methods
+
+  # Variables
+  - key: "readability-identifier-naming.VariableCase"
+    value: "lower_case"
+  - key: "readability-identifier-naming.ParameterCase"
+    value: "lower_case"
+  - key: "readability-identifier-naming.LocalVariableCase"
+    value: "lower_case"
+  - key: "readability-identifier-naming.GlobalVariableCase"
+    value: "lower_case"
+
+  # Members
+  - key: "readability-identifier-naming.PublicMemberCase"
+    value: "lower_case"
+  - key: "readability-identifier-naming.PrivateMemberCase"
+    value: "lower_case"
+  - key: "readability-identifier-naming.PrivateMemberSuffix"
+    value: "_"
+
+  # Constants
+  - key: "readability-identifier-naming.ConstantCase"
+    value: "lowerCamelCase"
+  - key: "readability-identifier-naming.LocalConstantCase"
+    value: "lowerCamelCase"
+
+  # Macros
+  - key: "readability-identifier-naming.MacroDefinitionCase"
+    value: "UPPER_CASE"
+
+HeaderFilterRegex: "^(src|test)/.*"
+WarningsAsErrors: ""
