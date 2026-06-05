@@ -1,26 +1,24 @@
-#include <iostream>
-#include  <webgpu/webgpu.h>
+#include <GLFW/glfw3.h>
+#include <webgpu/webgpu.h>
 
-#include "engine.h"
+#include <iostream>
+
+#include "application.h"
+#include "util/device_adapter_util.h"
 
 int main() {
 
-  const Engine engine {5};
-  std::cout << engine.getId() << std::endl;
+  Application app;
 
-  WGPUInstanceDescriptor descriptor = {};
-  descriptor.nextInChain = nullptr;
-
-  WGPUInstance instance = wgpuCreateInstance(&descriptor);
-
-  if (!instance) {
-    std::cerr << "Couldn't initialize WebGPU :(" << std::endl;
-    return 1;
+  if (!app.Init()) {
+    return EXIT_FAILURE;
   }
 
-  std::cout << "WGPU Instance: " << instance << std::endl ;
+  while (app.ShouldContinue()) {
+    app.Tick();
+  }
 
-  wgpuInstanceRelease(instance);
+  app.Terminate();
 
-  return 0;
+  return EXIT_SUCCESS;
 }
