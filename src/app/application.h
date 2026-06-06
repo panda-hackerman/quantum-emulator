@@ -4,6 +4,9 @@
 
 #ifndef APPLICATION_H
 #define APPLICATION_H
+
+#include <utility>
+
 #include "GLFW/glfw3.h"
 #include "util/device_adapter_util.h"
 
@@ -12,10 +15,14 @@ constexpr int kWindowHeight = 480;
 
 class Application {
 private:
+  using TextureViewPair = std::pair<WGPUSurfaceTexture, WGPUTextureView>;
+
   GLFWwindow *window_ = nullptr;
   WGPUDevice device_ = nullptr;
   WGPUQueue queue_ = nullptr;
   WGPUSurface surface_ = nullptr;
+
+  TextureViewPair GetNextTextureView();
 
 public:
   bool Init();
