@@ -1,6 +1,6 @@
-#include <GLFW/glfw3.h>
-
-#include <iostream>
+#define WEBGPU_CPP_IMPLEMENTATION
+#define EXIT_SUCCESS 0
+#define EXIT_FAILURE 1
 
 #include "application.h"
 
@@ -13,7 +13,7 @@ int main() {
   }
 
   while (app.ShouldContinue()) {
-    app.Tick();
+    app.Tick(); //FIXME: Emscripten
   }
 
   app.Terminate();

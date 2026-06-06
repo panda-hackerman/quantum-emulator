@@ -5,7 +5,7 @@
 #ifndef APPLICATION_H
 #define APPLICATION_H
 
-#include <utility>
+#include <webgpu/webgpu.hpp>
 
 #include "GLFW/glfw3.h"
 #include "util/device_adapter_util.h"
@@ -15,14 +15,14 @@ constexpr int kWindowHeight = 480;
 
 class Application {
 private:
-  using TextureViewPair = std::pair<WGPUSurfaceTexture, WGPUTextureView>;
+  bool has_terminated_ = false;
 
   GLFWwindow *window_ = nullptr;
-  WGPUDevice device_ = nullptr;
-  WGPUQueue queue_ = nullptr;
-  WGPUSurface surface_ = nullptr;
+  wgpu::Device device_ = nullptr;
+  wgpu::Queue queue_ = nullptr;
+  wgpu::Surface surface_ = nullptr;
 
-  TextureViewPair GetNextTextureView();
+  wgpu::TextureView GetNextTextureView();
 
 public:
   bool Init();
