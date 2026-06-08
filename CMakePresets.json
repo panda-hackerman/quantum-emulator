@@ -4,11 +4,23 @@
     {
       "name": "debug-wgpu",
       "displayName": "Debug (WGPU Native)",
-      "description": "Debug build, with testing disabled, using WebGPU Native.",
+      "description": "Debug build using WebGPU Native.",
       "binaryDir": "${sourceDir}/build/debug-wgpu",
       "generator": "Ninja",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
+        "BUILD_SHARED_LIBS": "OFF",
+        "WEBGPU_BACKEND": "WGPU"
+      }
+    },
+    {
+      "name": "release-wgpu",
+      "displayName": "Release (WGPU Native)",
+      "description": "Release build using WebGPU Native.",
+      "binaryDir": "${sourceDir}/build/release-wgpu",
+      "generator": "Ninja",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
         "BUILD_SHARED_LIBS": "OFF",
         "WEBGPU_BACKEND": "WGPU"
       }
