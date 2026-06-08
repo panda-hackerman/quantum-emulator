@@ -19,6 +19,7 @@ endif ()
 
 add_subdirectory(vendor/webgpu)
 add_subdirectory(vendor/glfw3webgpu) # https://github.com/glfw/glfw/pull/2333
+add_subdirectory(vendor/imgui)
 
 # -- ADD SUBDIRECTORIES -- #
 add_subdirectory(src/engine)
