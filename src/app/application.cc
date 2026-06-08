@@ -7,8 +7,11 @@
 #include <iostream>
 
 #include "glfw3webgpu.h"
+#include "util/device_adapter_util.h"
 
 bool Application::Init() {
+
+  has_terminated_ = false;
 
   // GLFW SETUP
   if (!glfwInit()) {
@@ -135,12 +138,7 @@ void Application::Tick() {
   // PRESENTING STUFF
 #ifndef __EMSCRIPTEN__
   surface_.present();
-  // wgpuSurfacePresent(surface_);
 #endif
-
-// #ifdef WEBGPU_BACKEND_WGPU
-//   wgpuTextureRelease(surface_texture.texture);
-// #endif
 
 #if defined(WEBGPU_BACKEND_DAWN)
   device_.tick();

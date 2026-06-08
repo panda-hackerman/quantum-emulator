@@ -8,7 +8,6 @@
 #include <webgpu/webgpu.hpp>
 
 #include "GLFW/glfw3.h"
-#include "util/device_adapter_util.h"
 
 constexpr int kWindowWidth = 640;
 constexpr int kWindowHeight = 480;
@@ -16,7 +15,6 @@ constexpr int kWindowHeight = 480;
 class Application {
 private:
   bool has_terminated_ = false;
-
   GLFWwindow *window_ = nullptr;
   wgpu::Device device_ = nullptr;
   wgpu::Queue queue_ = nullptr;
