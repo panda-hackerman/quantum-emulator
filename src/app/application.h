@@ -14,13 +14,16 @@ constexpr int kWindowHeight = 480;
 
 class Application {
 private:
-  bool has_terminated_ = false;
+  bool is_running_ = false;
   GLFWwindow *window_ = nullptr;
   wgpu::Device device_ = nullptr;
   wgpu::Queue queue_ = nullptr;
   wgpu::Surface surface_ = nullptr;
 
   wgpu::TextureView GetNextTextureView();
+
+  bool InitGUI();
+  void TerminateGUI();
 
 public:
   bool Init();

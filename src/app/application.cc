@@ -11,8 +11,6 @@
 
 bool Application::Init() {
 
-  has_terminated_ = false;
-
   // GLFW SETUP
   if (!glfwInit()) {
     std::cerr << "Couldn't initialize GLFW: Init function failed..." << std::endl;
@@ -58,7 +56,6 @@ bool Application::Init() {
 
   // GET QUEUE
   queue_ = device_.getQueue();
-  // queue_ = wgpuDeviceGetQueue(device_);
 
   // CONFIGURE SURFACE
   const wgpu::SurfaceConfiguration surface_config = {{
@@ -77,9 +74,37 @@ bool Application::Init() {
 
   // Release stuff we don't need anymore
   adapter.release();
-  // wgpuAdapterRelease(adapter);
+
+  // INIT GUI
+  if (!InitGUI()) {
+    std::cerr << "Couldn't initialize the GUI!" << std::endl;
+    return false;
+  }
+
+  is_running_ = true;
+  return true;
+}
+
+bool Application::InitGUI() {
+
+  // IMGUI_CHECKVERSION();
+
+  // ImGui::CreateContext();
+  // ImGui::GetIO();
+  //
+  // ImGui_ImplGlfw_InitForOther(window_, true);
+  //
+  // ImGui_ImplWGPU_InitInfo init_info{};
+  // init_info.Device = device_;
+  //
+  // ImGui_ImplWGPU_Init(&init_info);
 
   return true;
+}
+
+void Application::TerminateGUI() {
+  // ImGui_ImplGlfw_Shutdown();
+  // ImGui_ImplWGPU_Shutdown();
 }
 
 void Application::Tick() {
@@ -151,7 +176,7 @@ void Application::Tick() {
 
 void Application::Terminate() {
 
-  if (has_terminated_) return;
+  if (!is_running_) return;
 
   surface_.unconfigure();
   queue_.release();
@@ -161,7 +186,7 @@ void Application::Terminate() {
   glfwDestroyWindow(window_);
   glfwTerminate();
 
-  has_terminated_ = true;
+  is_running_ = false;
 }
 
 bool Application::ShouldContinue() const {

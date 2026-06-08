@@ -6,7 +6,7 @@ add_executable(App main.cc
 )
 
 target_link_libraries(App PRIVATE Engine)
-target_link_libraries(App PRIVATE glfw webgpu glfw3webgpu)
+target_link_libraries(App PRIVATE glfw webgpu glfw3webgpu imgui)
 
 if (XCODE)
     set_target_properties(App PROPERTIES
