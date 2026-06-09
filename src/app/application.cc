@@ -6,7 +6,10 @@
 
 #include <iostream>
 
+// #include "backends/imgui_impl_glfw.h"
+// #include "backends/imgui_impl_wgpu.h"
 #include "glfw3webgpu.h"
+// #include "imgui.h"
 #include "util/device_adapter_util.h"
 
 bool Application::Init() {
@@ -89,15 +92,14 @@ bool Application::InitGUI() {
 
   // IMGUI_CHECKVERSION();
 
+  std::cout << "Init GUI..." << std::endl;
+
   // ImGui::CreateContext();
   // ImGui::GetIO();
   //
   // ImGui_ImplGlfw_InitForOther(window_, true);
   //
-  // ImGui_ImplWGPU_InitInfo init_info{};
-  // init_info.Device = device_;
-  //
-  // ImGui_ImplWGPU_Init(&init_info);
+  // ImGui_ImplWGPU_Init(device_, 3, WGPUTextureFormat_Undefined, WGPUTextureFormat_Undefined);
 
   return true;
 }
@@ -124,13 +126,13 @@ void Application::Tick() {
   // GET RENDER PASS
   const wgpu::RenderPassColorAttachment color_attachment = {{
       .view = target_view,
+#ifndef WEBGPU_BACKEND_WGPU
+      .depthSlice = WGPU_DEPTH_SLICE_UNDEFINED,
+#endif
       .resolveTarget = nullptr,
       .loadOp = WGPULoadOp_Clear,
       .storeOp = WGPUStoreOp_Store,
       .clearValue = WGPUColor{100.0 / 255, 149.0 / 255, 237.0 / 255, 1.0},
-#ifndef WEBGPU_BACKEND_WGPU
-      .depthSlice = WGPU_DEPTH_SLICE_UNDEFINED,
-#endif
   }};
 
   const wgpu::RenderPassDescriptor render_pass_desc = {{
@@ -185,6 +187,8 @@ void Application::Terminate() {
 
   glfwDestroyWindow(window_);
   glfwTerminate();
+
+  TerminateGUI();
 
   is_running_ = false;
 }
