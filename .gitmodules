@@ -8,3 +8,6 @@
 	path = vendor/webgpu
 	url = https://github.com/eliemichel/WebGPU-distribution.git
 	shallow = true
+[submodule "vendor/glfw3webgpu"]
+	path = vendor/glfw3webgpu
+	url = https://github.com/eliemichel/glfw3webgpu.git
