@@ -125,20 +125,18 @@ bool Application::Init() {
   ImGui_ImplWGPU_Init(&init_info);
 
   // Now running... B)
-  // std::cout << "Finished Initialization! " << std::endl;
+  std::cout << "Finished Initialization! " << std::endl;
   is_running_ = true;
   return true;
 }
 
-void Application::Tick() {
-  // std::cout << "Tick..." << std::endl;
-  glfwPollEvents();
-  wgpuInstanceProcessEvents(instance_);
-
+void Application::BeginFrame() {
   ImGui_ImplWGPU_NewFrame();
   ImGui_ImplGlfw_NewFrame();
   ImGui::NewFrame();
+}
 
+void Application::DrawFrame() {
   static float f = 0.0f;
   static int counter = 0;
   static bool show_demo_window = true;
@@ -154,15 +152,16 @@ void Application::Tick() {
   ImGui::SliderFloat("float", &f, 0.0f, 1.0f);
   ImGui::ColorEdit3("clear color", reinterpret_cast<float *>(&clear_color));
 
-  if (ImGui::Button("Button"))
-    counter++;
+  if (ImGui::Button("Button")) counter++;
   ImGui::SameLine();
   ImGui::Text("counter = %d", counter);
 
-  ImGuiIO& io = ImGui::GetIO();
+  ImGuiIO &io = ImGui::GetIO();
   ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
   ImGui::End();
+}
 
+void Application::EndFrame() {
   ImGui::Render();
 
   // Get the next target view
@@ -224,49 +223,16 @@ void Application::Tick() {
 #ifndef __EMSCRIPTEN__
   wgpuSurfacePresent(surface_);
 #endif
-
-// #if defined(WEBGPU_BACKEND_DAWN)
-//   wgpuDeviceTick()
-// #elif defined(WEBGPU_BACKEND_WGPU)
-//   wgpuDevicePoll(device_, false, nullptr);
-// #elif defined(WEBGPU_BACKEND_EMSCRIPTEN)
-//   emscripten_sleep(100); // FIXME: Emscripten
-// #endif
 }
 
-// void Application::DrawFrame(WGPURenderPassEncoder) {
-//
-//   // UPDATE GUI
-//
-//
-//   // static float f = 0.0f;
-//   // static int counter = 0;
-//   // static bool show_demo_window = true;
-//   // static bool show_another_window = false;
-//   // static ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-//   //
-//   // ImGui::Begin("Hello, world!");                                // Create a window called "Hello, world!" and append into it.
-//   //
-//   // ImGui::Text("This is some useful text.");                     // Display some text (you can use a format strings too)
-//   // ImGui::Checkbox("Demo Window", &show_demo_window);            // Edit bools storing our window open/close state
-//   // ImGui::Checkbox("Another Window", &show_another_window);
-//   //
-//   // ImGui::SliderFloat("float", &f, 0.0f, 1.0f);                  // Edit 1 float using a slider from 0.0f to 1.0f
-//   // ImGui::ColorEdit3("clear color", (float*)&clear_color);       // Edit 3 floats representing a color
-//   //
-//   // if (ImGui::Button("Button"))                                  // Buttons return true when clicked (most widgets return true when edited/activated)
-//   //   counter++;
-//   // ImGui::SameLine();
-//   // ImGui::Text("counter = %d", counter);
-//   //
-//   // const ImGuiIO &io = ImGui::GetIO();
-//   // ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
-//   // ImGui::End();
-//
-//   // ImGui::EndFrame();
-//   // ImGui::Render();
-//   // ImGui_ImplWGPU_RenderDrawData(ImGui::GetDrawData(), render_pass);
-// }
+void Application::Tick() {
+  glfwPollEvents();
+  wgpuInstanceProcessEvents(instance_);
+
+  BeginFrame();
+  DrawFrame();
+  EndFrame();
+}
 
 void Application::Terminate() {
 

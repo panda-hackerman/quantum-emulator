@@ -24,15 +24,14 @@ private:
 
   WGPUTextureView GetNextTextureView();
 
-  // constexpr WGPULimits GetRequiredLimits();
+  void BeginFrame();
+  void DrawFrame();
+  void EndFrame();
 
 public:
   bool Init(); ///< Called on initialization
   void Terminate(); ///< Terminates all processes (called automatically in destructor)
   void Tick(); ///< Called every update
-
-  /// Called during the render pass (in update loop)
-  // void DrawFrame(WGPURenderPassEncoder render_pass);
 
   /**
    * True if the program should continue running.
