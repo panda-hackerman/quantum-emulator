@@ -18,9 +18,10 @@ else ()
 endif ()
 
 add_subdirectory(vendor/webgpu)
-add_subdirectory(vendor/glfw3webgpu) # https://github.com/glfw/glfw/pull/2333
+add_subdirectory(vendor/glfw3webgpu)
 add_subdirectory(vendor/imgui)
 
+# -- COMPILE DEFS -- #
 if ((WEBGPU_BACKEND STREQUAL "DAWN") OR (WEBGPU_BACKEND STREQUAL "EMSCRIPTEN"))
     target_compile_definitions(imgui PUBLIC IMGUI_IMPL_WEBGPU_BACKEND_DAWN)
 elseif (WEBGPU_BACKEND STREQUAL "WGPU")
@@ -28,6 +29,16 @@ elseif (WEBGPU_BACKEND STREQUAL "WGPU")
 else()
     message("WARNING: WebGPU backend not set!!")
 endif ()
+
+if (GLFW_BUILD_WIN32)
+    target_compile_definitions(glfw3webgpu PRIVATE _GLFW_WIN32)
+endif()
+if (GLFW_BUILD_X11)
+    target_compile_definitions(glfw3webgpu PRIVATE _GLFW_X11)
+endif()
+if (GLFW_BUILD_WAYLAND)
+    target_compile_definitions(glfw3webgpu PRIVATE _GLFW_WAYLAND)
+endif()
 
 # -- ADD SUBDIRECTORIES -- #
 add_subdirectory(src/engine)

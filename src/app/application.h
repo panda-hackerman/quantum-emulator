@@ -5,7 +5,7 @@
 #ifndef APPLICATION_H
 #define APPLICATION_H
 
-#include <webgpu/webgpu.hpp>
+#include <webgpu.h>
 
 #include "GLFW/glfw3.h"
 
@@ -16,11 +16,12 @@ class Application {
 private:
   bool is_running_ = false;
   GLFWwindow *window_ = nullptr;
-  wgpu::Device device_ = nullptr;
-  wgpu::Queue queue_ = nullptr;
-  wgpu::Surface surface_ = nullptr;
+  WGPUInstance instance_ = nullptr;
+  WGPUDevice device_ = nullptr;
+  WGPUQueue queue_ = nullptr;
+  WGPUSurface surface_ = nullptr;
 
-  wgpu::TextureView GetNextTextureView();
+  WGPUTextureView GetNextTextureView();
 
   bool InitGUI();
   void TerminateGUI();

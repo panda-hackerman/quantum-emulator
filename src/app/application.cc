@@ -6,11 +6,12 @@
 
 #include <iostream>
 
-// #include "backends/imgui_impl_glfw.h"
-// #include "backends/imgui_impl_wgpu.h"
 #include "glfw3webgpu.h"
 // #include "imgui.h"
+#include <wgpu.h>
+
 #include "util/device_adapter_util.h"
+#include "util/wgpu_string_view_util.h"
 
 bool Application::Init() {
 
@@ -31,58 +32,90 @@ bool Application::Init() {
   }
 
   // CREATE WGPU INSTANCE
-  wgpu::Instance instance = wgpuCreateInstance(nullptr);
+#ifdef WEBGPU_BACKEND_EMSCRIPTEN
+  instance_ = wgpuCreateInstance(nullptr);
+#else
+  const WGPUInstanceDescriptor instance_desc = {.nextInChain = nullptr};
+  instance_ = wgpuCreateInstance(&instance_desc);
+#endif
 
   // GET SURFACE
-  surface_ = glfwGetWGPUSurface(instance, window_);
+  surface_ = glfwCreateWindowWGPUSurface(instance_, window_); // FIXME
 
-  // CREATE ADAPTER
-  const wgpu::RequestAdapterOptions adapter_options = {{
+  // REQUEST ADAPTER
+  std::cout << "Requesting Adapter..." << '\n';
+
+  const WGPURequestAdapterOptions adapter_options = {
+      .nextInChain = nullptr,
       .compatibleSurface = surface_,
-  }};
+  };
 
-  wgpu::Adapter adapter = instance.requestAdapter(adapter_options);
+  WGPUAdapter adapter = RequestAdapterSync(instance_, &adapter_options);
 
-  instance.release();
+  std::cout << "Got Adapter: " << adapter << '\n';
+
+  InspectAdapter(adapter); // DEBUG
+
+  wgpuInstanceRelease(instance_);
 
   // GET DEVICE
-  const wgpu::DeviceDescriptor device_desc = {{
-      .label = "The Device",
-      .requiredFeatureCount = 0,
-      .requiredLimits = nullptr,
-      .defaultQueue = {.nextInChain = nullptr, .label = "The Default Queue"},
-      .deviceLostCallback = OnDeviceLostCallback,
-  }};
+  std::cout << "Requesting Device..." << '\n';
 
-  device_ = adapter.requestDevice(device_desc);
-  device_.setUncapturedErrorCallback(OnDeviceErrorCallback);
+  WGPUDeviceDescriptor device_desc = {
+      .nextInChain = nullptr,
+      .label = "The Device"_w,
+      .requiredFeatureCount = 0,
+      .requiredFeatures = nullptr,
+      .requiredLimits = nullptr,
+      .defaultQueue = {.nextInChain = nullptr, .label = "The Default Queue"_w},
+      .deviceLostCallbackInfo = {.nextInChain = nullptr,
+                                 .mode = WGPUCallbackMode_AllowProcessEvents,
+                                 .callback = OnDeviceLostCallback},
+      .uncapturedErrorCallbackInfo = {.nextInChain = nullptr, .callback = OnDeviceErrorCallback},
+  };
+
+  device_ = RequestDeviceSync(instance_, adapter, &device_desc);
+  // wgpuAdapterRelease(adapter);
+
+  std::cout << "Got Device: " << device_ << '\n';
+
+  InspectDevice(device_);
 
   // GET QUEUE
-  queue_ = device_.getQueue();
+  queue_ = wgpuDeviceGetQueue(device_);
+  // queue_ = device_.getQueue();
 
   // CONFIGURE SURFACE
-  const wgpu::SurfaceConfiguration surface_config = {{
+  WGPUSurfaceCapabilities capabilities = {};
+  wgpuSurfaceGetCapabilities(surface_, adapter, &capabilities);
+
+  const WGPUTextureFormat &preferred_format = capabilities.formats[0];
+
+  const WGPUSurfaceConfiguration surface_config = {
+      .nextInChain = nullptr,
       .device = device_,
-      .format = wgpuSurfaceGetPreferredFormat(surface_, adapter),
+      .format = preferred_format,
       .usage = WGPUTextureUsage_RenderAttachment,
+      .width = kWindowWidth,
+      .height = kWindowHeight,
       .viewFormatCount = 0,
       .viewFormats = nullptr,
       .alphaMode = WGPUCompositeAlphaMode_Auto,
-      .width = kWindowWidth,
-      .height = kWindowHeight,
       .presentMode = WGPUPresentMode_Fifo,
-  }};
+  };
 
-  surface_.configure(surface_config);
+  wgpuSurfaceConfigure(surface_, &surface_config);
+  wgpuSurfaceCapabilitiesFreeMembers(capabilities);
 
   // Release stuff we don't need anymore
-  adapter.release();
+  wgpuAdapterRelease(adapter);
 
   // INIT GUI
-  if (!InitGUI()) {
-    std::cerr << "Couldn't initialize the GUI!" << std::endl;
-    return false;
-  }
+  InitGUI();
+  // if (!InitGUI()) {
+  //   std::cerr << "Couldn't initialize the GUI!" << std::endl;
+  //   return false;
+  // }
 
   is_running_ = true;
   return true;
@@ -111,20 +144,23 @@ void Application::TerminateGUI() {
 
 void Application::Tick() {
   glfwPollEvents();
+  wgpuInstanceProcessEvents(instance_);
 
   // Get the next target view
-  auto target_view = GetNextTextureView();
+  WGPUTextureView target_view = GetNextTextureView();
   if (!target_view) return;
 
   // GET ENCODER
-  const wgpu::CommandEncoderDescriptor encoder_desc = {{
-      .label = "The Command Encoder",
-  }};
+  const WGPUCommandEncoderDescriptor encoder_desc = {
+      .nextInChain = nullptr,
+      .label = "The Command Encoder"_w,
+  };
 
-  wgpu::CommandEncoder encoder = device_.createCommandEncoder(encoder_desc);
+  WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(device_, &encoder_desc);
+  // WGPUCommandEncoder encoder = device_.createCommandEncoder(encoder_desc);
 
   // GET RENDER PASS
-  const wgpu::RenderPassColorAttachment color_attachment = {{
+  const WGPURenderPassColorAttachment color_attachment = {
       .view = target_view,
 #ifndef WEBGPU_BACKEND_WGPU
       .depthSlice = WGPU_DEPTH_SLICE_UNDEFINED,
@@ -133,44 +169,49 @@ void Application::Tick() {
       .loadOp = WGPULoadOp_Clear,
       .storeOp = WGPUStoreOp_Store,
       .clearValue = WGPUColor{100.0 / 255, 149.0 / 255, 237.0 / 255, 1.0},
-  }};
+  };
 
-  const wgpu::RenderPassDescriptor render_pass_desc = {{
+  const WGPURenderPassDescriptor render_pass_desc = {
       .colorAttachmentCount = 1,
       .colorAttachments = &color_attachment,
       .depthStencilAttachment = nullptr,
       .timestampWrites = nullptr,
-  }};
+  };
 
   // CREATE RENDER PASS
   // rn we only clear the screen so we just kill it immediately
-  wgpu::RenderPassEncoder render_pass = encoder.beginRenderPass(render_pass_desc);
-  render_pass.end();
-  render_pass.release();
+  WGPURenderPassEncoder render_pass = wgpuCommandEncoderBeginRenderPass(encoder, &render_pass_desc);
+
+  // TODO: Render stuff...
+
+  wgpuRenderPassEncoderEnd(render_pass);
+  wgpuRenderPassEncoderRelease(render_pass);
 
   // ENCODE AND SUBMIT RENDER PASS
-  const wgpu::CommandBufferDescriptor cmd_buffer_desc = {{
-      .label = "The Command Buffer",
-  }};
+  WGPUCommandBufferDescriptor cmd_buffer_desc = {
+      .nextInChain = nullptr,
+      .label = "The Command Buffer"_w,
+  };
 
-  wgpu::CommandBuffer command = encoder.finish(cmd_buffer_desc);
-  encoder.release();
+  WGPUCommandBuffer command = wgpuCommandEncoderFinish(encoder, &cmd_buffer_desc);
+  wgpuCommandEncoderRelease(encoder);
 
-  queue_.submit(1, &command);
-  command.release();
+  wgpuQueueSubmit(queue_, 1, &command);
+  wgpuCommandBufferRelease(command);
 
   // RELEASING STUFF
-  target_view.release();
+  wgpuTextureViewRelease(target_view);
 
   // PRESENTING STUFF
 #ifndef __EMSCRIPTEN__
-  surface_.present();
+  wgpuSurfacePresent(surface_);
 #endif
 
 #if defined(WEBGPU_BACKEND_DAWN)
-  device_.tick();
+  wgpuDeviceTick()
+  // device_.tick();
 #elif defined(WEBGPU_BACKEND_WGPU)
-  device_.poll(false);
+  wgpuDevicePoll(device_, false, nullptr);
 #elif defined(WEBGPU_BACKEND_EMSCRIPTEN)
   emscripten_sleep(100); // FIXME: Emscripten
 #endif
@@ -180,10 +221,10 @@ void Application::Terminate() {
 
   if (!is_running_) return;
 
-  surface_.unconfigure();
-  queue_.release();
-  surface_.release();
-  device_.release();
+  wgpuSurfaceUnconfigure(surface_);
+  wgpuQueueRelease(queue_);
+  wgpuSurfaceRelease(surface_);
+  wgpuDeviceRelease(device_);
 
   glfwDestroyWindow(window_);
   glfwTerminate();
@@ -197,24 +238,22 @@ bool Application::ShouldContinue() const {
   return !glfwWindowShouldClose(window_);
 }
 
-wgpu::TextureView Application::GetNextTextureView() {
+WGPUTextureView Application::GetNextTextureView() {
 
-  wgpu::SurfaceTexture surface_texture;
-  surface_.getCurrentTexture(&surface_texture);
-  // wgpuSurfaceGetCurrentTexture(surface_, &surface_texture);
+  WGPUSurfaceTexture surface_texture;
+  wgpuSurfaceGetCurrentTexture(surface_, &surface_texture);
 
-  if (surface_texture.status != wgpu::SurfaceGetCurrentTextureStatus::Success) {
-    return nullptr;
+  if (surface_texture.status != WGPUSurfaceGetCurrentTextureStatus_SuccessOptimal &&
+      surface_texture.status != WGPUSurfaceGetCurrentTextureStatus_SuccessSuboptimal) {
+    return nullptr; // TODO: Check for suboptimal
   }
 
-  wgpu::Texture texture = surface_texture.texture;
-
-  // TODO: Check for suboptimal
+  WGPUTexture texture = surface_texture.texture;
 
   // Create the texture view
-  const wgpu::TextureViewDescriptor view_descriptor = {{
+  const WGPUTextureViewDescriptor view_descriptor = {
       .nextInChain = nullptr,
-      .label = "Surface Texture View",
+      .label = "Surface Texture View"_w,
       .format = wgpuTextureGetFormat(surface_texture.texture),
       .dimension = WGPUTextureViewDimension_2D,
       .baseMipLevel = 0,
@@ -222,9 +261,10 @@ wgpu::TextureView Application::GetNextTextureView() {
       .baseArrayLayer = 0,
       .arrayLayerCount = 1,
       .aspect = WGPUTextureAspect_All,
-  }};
+      .usage = WGPUTextureUsage_RenderAttachment,
+  };
 
-  wgpu::TextureView target_view = texture.createView(view_descriptor);
+  WGPUTextureView target_view = wgpuTextureCreateView(texture, &view_descriptor);
 
 #ifndef WEBGPU_BACKEND_WGPU
   wgpuTextureRelease(surface_texture.texture);

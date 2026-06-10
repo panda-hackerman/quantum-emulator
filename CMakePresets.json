@@ -10,7 +10,8 @@
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
         "BUILD_SHARED_LIBS": "OFF",
-        "WEBGPU_BACKEND": "WGPU"
+        "WEBGPU_BACKEND": "WGPU",
+        "WEBGPU_BUILD_FROM_SOURCE": "OFF"
       }
     },
     {
@@ -22,7 +23,8 @@
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
         "BUILD_SHARED_LIBS": "OFF",
-        "WEBGPU_BACKEND": "WGPU"
+        "WEBGPU_BACKEND": "WGPU",
+        "WEBGPU_BUILD_FROM_SOURCE": "OFF"
       }
     }
   ]

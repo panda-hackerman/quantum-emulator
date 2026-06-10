@@ -3,6 +3,8 @@ add_executable(App main.cc
         util/device_adapter_util.h
         application.cc
         application.h
+        util/wgpu_string_view_util.h
+        util/sleep_util.h
 )
 
 target_link_libraries(App PRIVATE Engine)
@@ -17,6 +19,7 @@ endif ()
 
 if (EMSCRIPTEN)
     set_target_properties(App PROPERTIES SUFFIX ".html")
+    target_link_options(App PRIVATE -sASYNCIFY)
 endif ()
 
 target_copy_webgpu_binaries(App)
