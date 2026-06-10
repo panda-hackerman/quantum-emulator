@@ -5,6 +5,7 @@ add_executable(App main.cc
         application.h
         util/wgpu_string_view_util.h
         util/sleep_util.h
+        util/settings_constants.h
 )
 
 target_link_libraries(App PRIVATE Engine)

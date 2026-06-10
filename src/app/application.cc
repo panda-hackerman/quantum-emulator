@@ -4,13 +4,15 @@
 
 #include "application.h"
 
+#include <glfw3webgpu.h>
+#include <imgui.h>
+
 #include <iostream>
 
-#include "glfw3webgpu.h"
-// #include "imgui.h"
-#include <wgpu.h>
-
+#include "backends/imgui_impl_glfw.h"
+#include "backends/imgui_impl_wgpu.h"
 #include "util/device_adapter_util.h"
+#include "util/settings_constants.h"
 #include "util/wgpu_string_view_util.h"
 
 bool Application::Init() {
@@ -56,7 +58,7 @@ bool Application::Init() {
 
   InspectAdapter(adapter); // DEBUG
 
-  wgpuInstanceRelease(instance_);
+  // wgpuInstanceRelease(instance_);
 
   // GET DEVICE
   std::cout << "Requesting Device..." << '\n';
@@ -66,7 +68,7 @@ bool Application::Init() {
       .label = "The Device"_w,
       .requiredFeatureCount = 0,
       .requiredFeatures = nullptr,
-      .requiredLimits = nullptr,
+      .requiredLimits = &kDeviceRequiredLimits,
       .defaultQueue = {.nextInChain = nullptr, .label = "The Default Queue"_w},
       .deviceLostCallbackInfo = {.nextInChain = nullptr,
                                  .mode = WGPUCallbackMode_AllowProcessEvents,
@@ -75,7 +77,6 @@ bool Application::Init() {
   };
 
   device_ = RequestDeviceSync(instance_, adapter, &device_desc);
-  // wgpuAdapterRelease(adapter);
 
   std::cout << "Got Device: " << device_ << '\n';
 
@@ -83,13 +84,12 @@ bool Application::Init() {
 
   // GET QUEUE
   queue_ = wgpuDeviceGetQueue(device_);
-  // queue_ = device_.getQueue();
 
   // CONFIGURE SURFACE
   WGPUSurfaceCapabilities capabilities = {};
   wgpuSurfaceGetCapabilities(surface_, adapter, &capabilities);
 
-  const WGPUTextureFormat &preferred_format = capabilities.formats[0];
+  const WGPUTextureFormat preferred_format = capabilities.formats[0];
 
   const WGPUSurfaceConfiguration surface_config = {
       .nextInChain = nullptr,
@@ -111,40 +111,59 @@ bool Application::Init() {
   wgpuAdapterRelease(adapter);
 
   // INIT GUI
-  InitGUI();
-  // if (!InitGUI()) {
-  //   std::cerr << "Couldn't initialize the GUI!" << std::endl;
-  //   return false;
-  // }
+  std::cout << "Initializing ImGui..." << '\n';
 
+  ImGui::CreateContext();
+  ImGui::GetIO();
+
+  ImGui_ImplGlfw_InitForOther(window_, true);
+
+  ImGui_ImplWGPU_InitInfo init_info;
+  init_info.Device = device_;
+  init_info.RenderTargetFormat = preferred_format;
+
+  ImGui_ImplWGPU_Init(&init_info);
+
+  // Now running... B)
+  // std::cout << "Finished Initialization! " << std::endl;
   is_running_ = true;
   return true;
 }
 
-bool Application::InitGUI() {
-
-  // IMGUI_CHECKVERSION();
-
-  std::cout << "Init GUI..." << std::endl;
-
-  // ImGui::CreateContext();
-  // ImGui::GetIO();
-  //
-  // ImGui_ImplGlfw_InitForOther(window_, true);
-  //
-  // ImGui_ImplWGPU_Init(device_, 3, WGPUTextureFormat_Undefined, WGPUTextureFormat_Undefined);
-
-  return true;
-}
-
-void Application::TerminateGUI() {
-  // ImGui_ImplGlfw_Shutdown();
-  // ImGui_ImplWGPU_Shutdown();
-}
-
 void Application::Tick() {
+  // std::cout << "Tick..." << std::endl;
   glfwPollEvents();
   wgpuInstanceProcessEvents(instance_);
+
+  ImGui_ImplWGPU_NewFrame();
+  ImGui_ImplGlfw_NewFrame();
+  ImGui::NewFrame();
+
+  static float f = 0.0f;
+  static int counter = 0;
+  static bool show_demo_window = true;
+  static bool show_another_window = false;
+  static auto clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+
+  ImGui::Begin("Hello, world!");
+
+  ImGui::Text("This is some useful text.");
+  ImGui::Checkbox("Demo Window", &show_demo_window);
+  ImGui::Checkbox("Another Window", &show_another_window);
+
+  ImGui::SliderFloat("float", &f, 0.0f, 1.0f);
+  ImGui::ColorEdit3("clear color", reinterpret_cast<float *>(&clear_color));
+
+  if (ImGui::Button("Button"))
+    counter++;
+  ImGui::SameLine();
+  ImGui::Text("counter = %d", counter);
+
+  ImGuiIO& io = ImGui::GetIO();
+  ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
+  ImGui::End();
+
+  ImGui::Render();
 
   // Get the next target view
   WGPUTextureView target_view = GetNextTextureView();
@@ -157,7 +176,6 @@ void Application::Tick() {
   };
 
   WGPUCommandEncoder encoder = wgpuDeviceCreateCommandEncoder(device_, &encoder_desc);
-  // WGPUCommandEncoder encoder = device_.createCommandEncoder(encoder_desc);
 
   // GET RENDER PASS
   const WGPURenderPassColorAttachment color_attachment = {
@@ -168,7 +186,7 @@ void Application::Tick() {
       .resolveTarget = nullptr,
       .loadOp = WGPULoadOp_Clear,
       .storeOp = WGPUStoreOp_Store,
-      .clearValue = WGPUColor{100.0 / 255, 149.0 / 255, 237.0 / 255, 1.0},
+      .clearValue = kWindowClearColor,
   };
 
   const WGPURenderPassDescriptor render_pass_desc = {
@@ -179,10 +197,10 @@ void Application::Tick() {
   };
 
   // CREATE RENDER PASS
-  // rn we only clear the screen so we just kill it immediately
   WGPURenderPassEncoder render_pass = wgpuCommandEncoderBeginRenderPass(encoder, &render_pass_desc);
 
-  // TODO: Render stuff...
+  ImGui_ImplWGPU_RenderDrawData(ImGui::GetDrawData(), render_pass);
+  // DrawFrame(render_pass); // FIXME: Render
 
   wgpuRenderPassEncoderEnd(render_pass);
   wgpuRenderPassEncoderRelease(render_pass);
@@ -207,35 +225,66 @@ void Application::Tick() {
   wgpuSurfacePresent(surface_);
 #endif
 
-#if defined(WEBGPU_BACKEND_DAWN)
-  wgpuDeviceTick()
-  // device_.tick();
-#elif defined(WEBGPU_BACKEND_WGPU)
-  wgpuDevicePoll(device_, false, nullptr);
-#elif defined(WEBGPU_BACKEND_EMSCRIPTEN)
-  emscripten_sleep(100); // FIXME: Emscripten
-#endif
+// #if defined(WEBGPU_BACKEND_DAWN)
+//   wgpuDeviceTick()
+// #elif defined(WEBGPU_BACKEND_WGPU)
+//   wgpuDevicePoll(device_, false, nullptr);
+// #elif defined(WEBGPU_BACKEND_EMSCRIPTEN)
+//   emscripten_sleep(100); // FIXME: Emscripten
+// #endif
 }
+
+// void Application::DrawFrame(WGPURenderPassEncoder) {
+//
+//   // UPDATE GUI
+//
+//
+//   // static float f = 0.0f;
+//   // static int counter = 0;
+//   // static bool show_demo_window = true;
+//   // static bool show_another_window = false;
+//   // static ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+//   //
+//   // ImGui::Begin("Hello, world!");                                // Create a window called "Hello, world!" and append into it.
+//   //
+//   // ImGui::Text("This is some useful text.");                     // Display some text (you can use a format strings too)
+//   // ImGui::Checkbox("Demo Window", &show_demo_window);            // Edit bools storing our window open/close state
+//   // ImGui::Checkbox("Another Window", &show_another_window);
+//   //
+//   // ImGui::SliderFloat("float", &f, 0.0f, 1.0f);                  // Edit 1 float using a slider from 0.0f to 1.0f
+//   // ImGui::ColorEdit3("clear color", (float*)&clear_color);       // Edit 3 floats representing a color
+//   //
+//   // if (ImGui::Button("Button"))                                  // Buttons return true when clicked (most widgets return true when edited/activated)
+//   //   counter++;
+//   // ImGui::SameLine();
+//   // ImGui::Text("counter = %d", counter);
+//   //
+//   // const ImGuiIO &io = ImGui::GetIO();
+//   // ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
+//   // ImGui::End();
+//
+//   // ImGui::EndFrame();
+//   // ImGui::Render();
+//   // ImGui_ImplWGPU_RenderDrawData(ImGui::GetDrawData(), render_pass);
+// }
 
 void Application::Terminate() {
 
-  if (!is_running_) return;
+  if (is_running_) {
+    wgpuInstanceRelease(instance_);
+    wgpuSurfaceUnconfigure(surface_);
+    wgpuQueueRelease(queue_);
+    wgpuSurfaceRelease(surface_);
+    wgpuDeviceRelease(device_);
 
-  wgpuSurfaceUnconfigure(surface_);
-  wgpuQueueRelease(queue_);
-  wgpuSurfaceRelease(surface_);
-  wgpuDeviceRelease(device_);
+    glfwDestroyWindow(window_);
+    glfwTerminate();
 
-  glfwDestroyWindow(window_);
-  glfwTerminate();
-
-  TerminateGUI();
+    ImGui_ImplWGPU_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+  }
 
   is_running_ = false;
-}
-
-bool Application::ShouldContinue() const {
-  return !glfwWindowShouldClose(window_);
 }
 
 WGPUTextureView Application::GetNextTextureView() {

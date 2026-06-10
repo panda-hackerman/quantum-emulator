@@ -11,6 +11,7 @@
 
 constexpr int kWindowWidth = 640;
 constexpr int kWindowHeight = 480;
+constexpr WGPUColor kWindowClearColor = {100 / 255.0, 149 / 255.0, 237 / 255.0, 1};
 
 class Application {
 private:
@@ -23,14 +24,21 @@ private:
 
   WGPUTextureView GetNextTextureView();
 
-  bool InitGUI();
-  void TerminateGUI();
+  // constexpr WGPULimits GetRequiredLimits();
 
 public:
-  bool Init();
-  void Terminate();
-  void Tick();
-  [[nodiscard]] bool ShouldContinue() const;
+  bool Init(); ///< Called on initialization
+  void Terminate(); ///< Terminates all processes (called automatically in destructor)
+  void Tick(); ///< Called every update
+
+  /// Called during the render pass (in update loop)
+  // void DrawFrame(WGPURenderPassEncoder render_pass);
+
+  /**
+   * True if the program should continue running.
+   * @return False if the GLFW window should close, otherwise true.
+   */
+  [[nodiscard]] bool ShouldContinue() const { return !glfwWindowShouldClose(window_); }
 
   ~Application() { Terminate(); }
 };
