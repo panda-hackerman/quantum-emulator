@@ -101,7 +101,7 @@ bool Application::Init() {
       .viewFormatCount = 0,
       .viewFormats = nullptr,
       .alphaMode = WGPUCompositeAlphaMode_Auto,
-      .presentMode = WGPUPresentMode_Fifo,
+      .presentMode = WGPUPresentMode_Immediate,
   };
 
   wgpuSurfaceConfigure(surface_, &surface_config);
