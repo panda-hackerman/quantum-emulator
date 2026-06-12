@@ -4,6 +4,6 @@
 
 #include "engine.h"
 
-int Engine::getId() const {
-  return _id;
+int Engine::GetId() const {
+  return id_;
 }

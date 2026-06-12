@@ -4,9 +4,9 @@
 
 #ifndef SPARSE_SET_H
 #define SPARSE_SET_H
-#include <cstddef>
 #include <ranges>
 #include <stdexcept>
+#include <string>
 #include <unordered_map>
 #include <vector>
 

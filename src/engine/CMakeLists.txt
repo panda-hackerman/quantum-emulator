@@ -4,6 +4,8 @@ add_library(Engine
         collections/bimap.h
         collections/compile_time_map.h
         collections/sparse_set.h
+        math/complex_matrix.h
+        math/complex_matrix.cc
 )
 
 target_include_directories(Engine PUBLIC

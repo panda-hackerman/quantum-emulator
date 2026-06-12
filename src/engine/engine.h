@@ -7,12 +7,12 @@
 
 class Engine {
 private:
-  int _id;
+  int id_;
 
 public:
-  explicit Engine(const int id) : _id(id) {}
+  explicit Engine(const int id) : id_(id) {}
 
-  [[nodiscard]] int getId() const;
+  [[nodiscard]] int GetId() const;
 };
 
 #endif // ENGINE_H

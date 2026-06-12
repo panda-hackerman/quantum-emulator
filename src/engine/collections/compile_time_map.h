@@ -4,7 +4,6 @@
 
 #ifndef CONST_MAP_H
 #define CONST_MAP_H
-#include <cstddef>
 #include <stdexcept>
 
 namespace sdw::core {
@@ -53,7 +52,7 @@ public:
       }
     }
 
-    __builtin_unreachable();
+    std::unreachable();
   }
 
   [[nodiscard]] constexpr std::size_t Size() const noexcept {
