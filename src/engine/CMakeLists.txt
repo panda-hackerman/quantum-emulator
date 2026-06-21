@@ -4,8 +4,11 @@ add_library(Engine
         collections/bimap.h
         collections/compile_time_map.h
         collections/sparse_set.h
-        math/complex_matrix.h
-        math/complex_matrix.cc
+        math/matrix.h
+        quantum_circuit/circuit.cc
+        quantum_circuit/circuit.h
+        quantum_circuit/gates.h
+        util/print_util.h
 )
 
 target_include_directories(Engine PUBLIC

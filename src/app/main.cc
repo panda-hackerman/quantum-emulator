@@ -2,9 +2,11 @@
 
 #define EXIT_SUCCESS 0
 #define EXIT_FAILURE 1
-#include <math/complex_matrix.h>
 
 #include <iostream>
+
+#include "math/matrix.h"
+#include "quantum_circuit/gates.h"
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
@@ -12,7 +14,8 @@
 
 #include "application.h"
 
-inline std::string ExceptionWhat(const std::exception_ptr &e_ptr = std::current_exception()) noexcept {
+inline std::string ExceptionWhat(
+    const std::exception_ptr &e_ptr = std::current_exception()) noexcept {
   if (!e_ptr) return "[BAD EXCEPTION]";
 
   try {
@@ -29,7 +32,6 @@ inline std::string ExceptionWhat(const std::exception_ptr &e_ptr = std::current_
 }
 
 int main() {
-
   try {
     Application app;
 
