@@ -15,6 +15,7 @@
 
 #include "util/print_util.h"
 
+/// Relating to matrices
 namespace matrix {
 inline constexpr std::size_t kDynamicSize = 0;
 
@@ -25,22 +26,12 @@ static constexpr std::array<T, N> RangeToArray(Range &&r) {
     return {(Is, *it++)...};
   }(std::make_index_sequence<N>{});
 }
-
-template <typename T, std::size_t Rows, std::size_t Cols, typename Range>
-static constexpr std::array<T, Rows * Cols> Flatten2DArray(
-    std::array<std::array<std::complex<float>, Cols>, Rows> &entries) {
-
-  constexpr std::size_t size = Rows * Cols;
-  auto r = std::ranges::join_view(entries);
-
-  return [&]<std::size_t... Is>(std::index_sequence<Is...>) -> std::array<T, size> {
-    auto it = std::ranges::begin(r);
-    return {(Is, *it++)...};
-  }(std::make_index_sequence<size>{});
-}
-
 } // namespace matrix
 
+/**
+ * Interface for a 2D matrix of values.
+ * @tparam T The type of the entries of the matrix.
+ */
 template <typename T>
 class IMatrix2D {
 public:
@@ -55,6 +46,13 @@ public:
   constexpr std::ostream &Print(std::ostream &os) const;
 };
 
+/**
+ * Matrix data, with a non-dynamic size (e.g., known at compile-time).
+ * @tparam T The type of the entries of the matrix
+ * @tparam Rows Number of rows
+ * @tparam Cols Number of columns
+ * @note Stored as flattened std::array
+ */
 template <class T, std::size_t Rows, std::size_t Cols>
   requires(Rows != matrix::kDynamicSize && Cols != matrix::kDynamicSize)
 struct MatrixDataType {
@@ -68,6 +66,11 @@ struct MatrixDataType {
   [[nodiscard]] virtual constexpr const T *Data() const noexcept { return entries.data(); }
 };
 
+/**
+ * Matrix data, with a dynamic size (e.g., not known at compile-time)
+ * @tparam T The type of the entries of the matrix
+ * @note Stores a pointer, and the data is allocated on the heap. This class manages its own memory.
+ */
 template <class T>
 struct MatrixDataType<T, matrix::kDynamicSize, matrix::kDynamicSize> {
   T *entries;
@@ -77,6 +80,12 @@ struct MatrixDataType<T, matrix::kDynamicSize, matrix::kDynamicSize> {
   [[nodiscard]] virtual constexpr const T *Data() const noexcept { return entries; }
 };
 
+/**
+ * A 2-dimensional matrix.
+ * @tparam T The type of the entries of the matrix
+ * @tparam Rows The number of rows
+ * @tparam Cols The number of columns
+ */
 template <typename T, std::size_t Rows = matrix::kDynamicSize,
           std::size_t Cols = matrix::kDynamicSize>
   requires((Rows != matrix::kDynamicSize && Cols != matrix::kDynamicSize) ||
@@ -89,6 +98,11 @@ public:
   template <typename S>
   using RowSpan_T = std::conditional_t<kIsDynamic, std::span<S>, std::span<S, Cols>>;
 
+  /**
+   * A single row of a matrix.
+   * @tparam S The type of the elements in the row.
+   * This is either the same as the type of elements in the matrix (T), or const T.
+   */
   template <typename S>
     requires(std::is_same_v<T, S> || std::is_same_v<T, std::remove_const_t<S>>)
   class MatrixRow : public RowSpan_T<S> {
@@ -120,7 +134,7 @@ protected:
 public:
   constexpr ~Matrix2D() override = default;
 
-  constexpr Matrix2D(const std::array<std::array<T, Cols>, Rows> &entries) :
+  constexpr explicit(false) Matrix2D(const std::array<std::array<T, Cols>, Rows> &entries) :
       DataType{matrix::RangeToArray<T, Rows * Cols>(std::ranges::join_view(entries))},
       num_rows_{Rows},
       num_cols_{Cols} {}
