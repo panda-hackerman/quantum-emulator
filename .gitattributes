@@ -1,0 +1,23 @@
+*       text=auto
+
+*.c     text diff=cpp linguist-language=C++
+*.cc    text diff=cpp linguist-language=C++
+*.cpp   text diff=cpp linguist-language=C++
+*.hpp   text diff=cpp linguist-language=C++
+*.h     text diff=cpp linguist-language=C++
+*.hh    text diff=cpp linguist-language=C++
+
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.ico   binary
+*.svg   text    linguist-language=SVG
+
+.gitattributes  export-ignore
+.gitignore      export-ignore
+.gitkeep        export-ignore
+.noai           export-ignore
+
+# Doxygen
+Doxyfile* text eol=lf linguist-language=Doxygen
