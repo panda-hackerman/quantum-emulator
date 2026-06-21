@@ -3,10 +3,8 @@
 #define EXIT_SUCCESS 0
 #define EXIT_FAILURE 1
 
+#include <exception>
 #include <iostream>
-
-#include "math/matrix.h"
-#include "quantum_circuit/gates.h"
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
@@ -36,7 +34,7 @@ int main() {
     Application app;
 
     if (!app.Init()) {
-      return EXIT_FAILURE;
+      return EXIT_FAILURE; // <-- Breakpoint recommended here
     }
 
 #ifdef __EMSCRIPTEN__
@@ -55,7 +53,7 @@ int main() {
     app.Terminate();
   } catch (...) {
     std::cerr << "Program failed due to an unhandled exception: " << ExceptionWhat() << std::endl;
-    return EXIT_FAILURE;
+    return EXIT_FAILURE; // <-- Breakpoint recommended here
   }
 
   return EXIT_SUCCESS;
