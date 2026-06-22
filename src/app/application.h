@@ -5,7 +5,8 @@
 #ifndef APPLICATION_H
 #define APPLICATION_H
 
-#include <webgpu.h>
+// #include <webgpu.h>
+#include <webgpu/webgpu.hpp>
 
 #include "GLFW/glfw3.h"
 

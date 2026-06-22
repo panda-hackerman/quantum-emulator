@@ -48,7 +48,7 @@ int main() {
     }
 #endif
 
-    app.Terminate();
+    // app.Terminate(); //< This is called when app is destroyed anyway...
   } catch (...) {
     std::cerr << "Program failed due to an unhandled exception: " << ExceptionWhat() << std::endl;
     return EXIT_FAILURE; // <-- Breakpoint recommended here
