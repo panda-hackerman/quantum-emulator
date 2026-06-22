@@ -4,7 +4,7 @@
 
 #ifndef SETTINGS_CONSTANTS_H
 #define SETTINGS_CONSTANTS_H
-#include <webgpu.h>
+#include <webgpu/webgpu.hpp>
 
 constexpr WGPULimits kDeviceRequiredLimits = {
     .nextInChain = nullptr,
