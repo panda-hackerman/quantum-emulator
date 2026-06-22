@@ -10,8 +10,6 @@
 #include <unordered_map>
 #include <vector>
 
-namespace sdw::core {
-
 /// Abstract sparse set interface for runtime polymorphism.
 class ISparseSet {
 public:
@@ -40,7 +38,6 @@ public:
  */
 template <std::integral KeyType, typename ValueType>
 class SparseSet : public ISparseSet {
-
 private:
   using DenseMap = std::vector<ValueType>;
   using SparseMap = std::unordered_map<KeyType, std::size_t>;
@@ -173,6 +170,5 @@ public:
   ConstIterator cbegin() const noexcept { return dense_.cbegin(); }
   ConstIterator cend() const noexcept { return dense_.cend(); }
 };
-} // namespace sdw::core
 
 #endif // SPARSE_SET_H

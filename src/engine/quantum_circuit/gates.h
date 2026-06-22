@@ -10,46 +10,49 @@
 
 namespace gates {
 
-template <std::size_t Rows, std::size_t Cols>
-using StaticComplexMatrix = Matrix2D<std::complex<float>, Rows, Cols>;
+template <std::size_t Rows = matrix::kDynamicSize, std::size_t Cols = matrix::kDynamicSize>
+using ComplexMatrix = Matrix2D<std::complex<float>, Rows, Cols>;
+
+template <std::size_t Qubits>
+using GateMatrix = ComplexMatrix<1 << Qubits, 1 << Qubits>;
 
 constexpr float kSqrt2 = 1.414214f; // = std::sqrt(2) (which bafflingly isn't constexpr)
 constexpr std::complex<float> kIm = {0, 1}; ///< i = std::sqrt(-1)
 constexpr std::complex<float> kNorm = {1 / kSqrt2, 0}; ///< normalization constant, i.e, 1/sqrt(2).
 constexpr std::complex<float> kRot4 = {1 / kSqrt2, 1 / kSqrt2}; ///< = exp (i * pi / 4) = 45 deg
 
-static constexpr StaticComplexMatrix<2, 2> kIdentity{{{
+static constexpr GateMatrix<1> kIdentity{{{
     {1, 0},
     {0, 1},
 }}};
 
-constexpr StaticComplexMatrix<2, 2> kPauliX = {{{
+constexpr GateMatrix<1> kPauliX = {{{
     {0, 1},
     {1, 0},
 }}};
 
-constexpr StaticComplexMatrix<2, 2> kPauliY = {{{
+constexpr GateMatrix<1> kPauliY = {{{
     {0, -kIm},
     {kIm, 0},
 }}};
 
-constexpr StaticComplexMatrix<2, 2> kPauliZ = {{{
+constexpr GateMatrix<1> kPauliZ = {{{
     {1, 0},
     {0, -1},
 }}};
 
-constexpr StaticComplexMatrix<2, 2> kHadamard = {{{
+constexpr GateMatrix<1> kHadamard = {{{
     {kNorm, kNorm},
     {kNorm, -kNorm},
 }}};
 
-constexpr StaticComplexMatrix<2, 2> kTGate = {{{
+constexpr GateMatrix<1> kTGate = {{{
     {1, 0},
     {0, kRot4},
 }}};
 
 /// CX_{j, j-1}: Controlled not gate where the bit to be flipped (j-1) is below the control bit (j)
-constexpr StaticComplexMatrix<4, 4> kControlledNotBelow = {{{
+constexpr GateMatrix<2> kControlledNotBelow = {{{
     {1, 0, 0, 0},
     {0, 1, 0, 0},
     {0, 0, 0, 1},
@@ -57,7 +60,7 @@ constexpr StaticComplexMatrix<4, 4> kControlledNotBelow = {{{
 }}};
 
 /// CX_{j, j+1}: Controlled not gate where the bit to be flipped (j-1) is below the control bit (j)
-constexpr StaticComplexMatrix<4, 4> kControlledNotAbove = {{{
+constexpr GateMatrix<2> kControlledNotAbove = {{{
     {1, 0, 0, 0},
     {0, 0, 0, 1},
     {0, 0, 1, 0},

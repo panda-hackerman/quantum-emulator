@@ -5,8 +5,8 @@
 #ifndef MATRIX_H
 #define MATRIX_H
 
+#include <algorithm>
 #include <array>
-#include <complex>
 #include <iomanip>
 #include <ranges>
 #include <span>
@@ -19,12 +19,15 @@
 namespace matrix {
 inline constexpr std::size_t kDynamicSize = 0;
 
-template <typename T, std::size_t N, typename Range>
-static constexpr std::array<T, N> RangeToArray(Range &&r) {
-  return [&]<std::size_t... Is>(std::index_sequence<Is...>) -> std::array<T, N> {
+/// Convert a 2D array into a flat (1D) array.
+template <typename T, std::size_t R, std::size_t C>
+static constexpr std::array<T, R * C> Flatten2D(const std::array<std::array<T, C>, R> &entries) {
+  auto r = std::ranges::join_view(entries);
+
+  return [&]<std::size_t... Is>(std::index_sequence<Is...>) -> std::array<T, R * C> {
     auto it = std::ranges::begin(r);
     return {(Is, *it++)...};
-  }(std::make_index_sequence<N>{});
+  }(std::make_index_sequence<R * C>{});
 }
 } // namespace matrix
 
@@ -54,7 +57,6 @@ public:
  * @note Stored as flattened std::array
  */
 template <class T, std::size_t Rows, std::size_t Cols>
-  requires(Rows != matrix::kDynamicSize && Cols != matrix::kDynamicSize)
 struct MatrixDataType {
   std::array<T, Rows * Cols> entries;
 
@@ -64,6 +66,19 @@ struct MatrixDataType {
   constexpr virtual ~MatrixDataType() = default;
   [[nodiscard]] virtual constexpr T *Data() noexcept { return entries.data(); }
   [[nodiscard]] virtual constexpr const T *Data() const noexcept { return entries.data(); }
+
+  MatrixDataType(const MatrixDataType &other) : entries(other.entries) {}
+  MatrixDataType(MatrixDataType &&other) noexcept : entries(std::move(other.entries)) {}
+
+  MatrixDataType &operator=(const MatrixDataType &other) {
+    if (this != &other) entries = other.entries;
+    return *this;
+  }
+
+  MatrixDataType &operator=(MatrixDataType &&other) noexcept {
+    if (this != &other) entries = std::move(other.entries);
+    return *this;
+  }
 };
 
 /**
@@ -73,11 +88,26 @@ struct MatrixDataType {
  */
 template <class T>
 struct MatrixDataType<T, matrix::kDynamicSize, matrix::kDynamicSize> {
-  T *entries;
+  std::vector<T> entries;
 
-  constexpr virtual ~MatrixDataType() { delete[] entries; }
-  [[nodiscard]] virtual constexpr T *Data() noexcept { return entries; }
-  [[nodiscard]] virtual constexpr const T *Data() const noexcept { return entries; }
+  constexpr MatrixDataType(const std::size_t rows, const std::size_t cols) : entries(rows * cols) {}
+
+  constexpr virtual ~MatrixDataType() = default;
+  [[nodiscard]] virtual constexpr T *Data() noexcept { return entries.data(); }
+  [[nodiscard]] virtual constexpr const T *Data() const noexcept { return entries.data(); }
+
+  constexpr MatrixDataType(const MatrixDataType &other) : entries(other.entries) {}
+  constexpr MatrixDataType(MatrixDataType &&other) noexcept : entries(std::move(other.entries)) {}
+
+  MatrixDataType &operator=(const MatrixDataType &other) {
+    if (this != &other) entries = other.entries;
+    return *this;
+  }
+
+  MatrixDataType &operator=(MatrixDataType &&other) noexcept {
+    if (this != &other) entries = std::move(other.entries);
+    return *this;
+  }
 };
 
 /**
@@ -123,8 +153,8 @@ public:
   using DataType = MatrixDataType<T, Rows, Cols>;
 
 protected:
-  const std::size_t num_rows_;
-  const std::size_t num_cols_;
+  std::size_t num_rows_;
+  std::size_t num_cols_;
 
   [[nodiscard]]
   constexpr std::size_t GetIndex(const std::size_t row, const std::size_t col) const noexcept {
@@ -134,10 +164,13 @@ protected:
 public:
   constexpr ~Matrix2D() override = default;
 
-  constexpr explicit(false) Matrix2D(const std::array<std::array<T, Cols>, Rows> &entries) :
-      DataType{matrix::RangeToArray<T, Rows * Cols>(std::ranges::join_view(entries))},
-      num_rows_{Rows},
-      num_cols_{Cols} {}
+  constexpr explicit(false) Matrix2D(const std::size_t num_rows, const std::size_t num_cols)
+    requires(kIsDynamic)
+      : DataType{num_rows, num_cols}, num_rows_{num_rows}, num_cols_{num_cols} {}
+
+  constexpr explicit(false) Matrix2D(const std::array<std::array<T, Cols>, Rows> &entries)
+    requires(!kIsDynamic)
+      : DataType{matrix::Flatten2D(entries)}, num_rows_{Rows}, num_cols_{Cols} {}
 
   [[nodiscard]] constexpr std::size_t NumRows() const noexcept override { return num_rows_; }
   [[nodiscard]] constexpr std::size_t NumCols() const noexcept override { return num_cols_; }
@@ -164,6 +197,41 @@ public:
 
   [[nodiscard]] constexpr Row_T operator[](const std::size_t row) { return At(row); }
   [[nodiscard]] constexpr RowConst_T operator[](const std::size_t row) const { return At(row); }
+
+  friend bool operator==(const Matrix2D &lhs, const Matrix2D &rhs) {
+    if (lhs.num_rows_ != rhs.num_rows_ || lhs.num_cols_ != rhs.num_cols_) {
+      return false; // Must be the same size
+    }
+
+    for (std::size_t r = 0; r < lhs.num_rows_; ++r) {
+      for (std::size_t c = 0; c < lhs.num_cols_; ++c) {
+        if (lhs.At(r, c) != rhs.At(r, c)) return false;
+      }
+    }
+
+    return true;
+  }
+
+  friend bool operator!=(const Matrix2D &lhs, const Matrix2D &rhs) { return !(lhs == rhs); }
+
+  Matrix2D<T> WithNewSize(const std::size_t new_cols, const std::size_t new_rows) {
+    if (new_cols == num_cols_ && new_rows == num_rows_) {
+      return *this;
+    }
+
+    Matrix2D<T> out{new_cols, new_rows};
+
+    const std::size_t min_row = std::min(num_rows_, new_rows);
+    const std::size_t min_col = std::min(num_cols_, new_cols);
+
+    for (std::size_t r = 0; r < min_row; ++r) {
+      for (std::size_t c = 0; c < min_col; ++c) {
+        out.At(r, c) = At(r, c);
+      }
+    }
+
+    return out;
+  }
 
 protected:
   [[noreturn]] static void XOutOfRange() { throw std::out_of_range("Invalid index for matrix."); }

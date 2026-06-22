@@ -6,8 +6,6 @@
 #define CONST_MAP_H
 #include <stdexcept>
 
-namespace sdw::core {
-
 /// Entry for a compile-time map
 template <typename KeyType, typename ValType>
 struct CTEntry {
@@ -72,7 +70,5 @@ constexpr auto CTMapBuilder(std::convertible_to<CTEntry<Key, Val>> auto... eleme
     -> CompileTimeMap<Key, Val, sizeof...(elements)> {
   return {elements...};
 }
-
-} // namespace sdw::core
 
 #endif // CONST_MAP_H
