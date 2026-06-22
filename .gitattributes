@@ -7,6 +7,8 @@
 *.h     text diff=cpp linguist-language=C++
 *.hh    text diff=cpp linguist-language=C++
 
+*.bat   text eol=crlf
+
 *.png   binary
 *.jpg   binary
 *.jpeg  binary

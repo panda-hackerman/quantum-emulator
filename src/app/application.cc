@@ -83,11 +83,16 @@ bool Application::Init() {
   InspectDevice(device_);
 
   // GET QUEUE
+  std::cout << "\nGetting Queue: " << '\n';
   queue_ = wgpuDeviceGetQueue(device_);
+  std::cout << "Got Queue: " << queue_ << '\n';
 
   // CONFIGURE SURFACE
+  std::cout << "\nConfiguring Surface: " << '\n';
   WGPUSurfaceCapabilities capabilities = {};
   wgpuSurfaceGetCapabilities(surface_, adapter, &capabilities);
+
+  std::cout << "Got surface capabilities..." << '\n';
 
   const WGPUTextureFormat preferred_format = capabilities.formats[0];
 
@@ -101,17 +106,23 @@ bool Application::Init() {
       .viewFormatCount = 0,
       .viewFormats = nullptr,
       .alphaMode = WGPUCompositeAlphaMode_Auto,
+#ifndef __EMSCRIPTEN__
       .presentMode = WGPUPresentMode_Immediate,
+#else
+      .presentMode = WGPUPresentMode_Fifo, // Immediate doesn't work on web...
+#endif
   };
 
   wgpuSurfaceConfigure(surface_, &surface_config);
   wgpuSurfaceCapabilitiesFreeMembers(capabilities);
 
+  std::cout << "Configured surface successfully! " << '\n';
+
   // Release stuff we don't need anymore
   wgpuAdapterRelease(adapter);
 
   // INIT GUI
-  std::cout << "Initializing ImGui..." << '\n';
+  std::cout << "\nInitializing ImGui..." << '\n';
 
   ImGui::CreateContext();
   ImGui::GetIO();
@@ -125,7 +136,7 @@ bool Application::Init() {
   ImGui_ImplWGPU_Init(&init_info);
 
   // Now running... B)
-  std::cout << "Finished Initialization! " << std::endl;
+  std::cout << "\nFinished Initialization! " << std::endl;
   is_running_ = true;
   return true;
 }
@@ -236,6 +247,8 @@ void Application::Tick() {
 
 void Application::Terminate() {
 
+  std::cout << "Terminating the program..." << '\n';
+
   if (is_running_) {
     wgpuInstanceRelease(instance_);
     wgpuSurfaceUnconfigure(surface_);
@@ -248,7 +261,11 @@ void Application::Terminate() {
 
     ImGui_ImplWGPU_Shutdown();
     ImGui_ImplGlfw_Shutdown();
+
+    std::cout << "Successfully terminated!" << '\n';
   }
+
+  std::cout << "The application is no longer running." << std::endl;
 
   is_running_ = false;
 }

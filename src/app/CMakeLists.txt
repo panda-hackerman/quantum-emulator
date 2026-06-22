@@ -23,9 +23,11 @@ if (EMSCRIPTEN)
             -sUSE_GLFW=3
             -sASYNCIFY
             -sALLOW_MEMORY_GROWTH
+            -fexceptions
     )
 
     set_target_properties(App PROPERTIES SUFFIX ".html")
+    target_compile_options(App PRIVATE -fexceptions)
 endif ()
 
 target_copy_webgpu_binaries(App)
