@@ -10,6 +10,7 @@ to serve as an educational tool, and to be reasonably optimized.
 - [How to compile](#how-to-compile)
   - [How to compile using an IDE](#using-an-ide)
   - [How to compile using the commandline](#using-the-commandline)
+  - [How to compile for the web](#for-the-web)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -30,7 +31,7 @@ However, I've only verified this on Windows 10 and 11.
 This is the easiest option, but it requires downloading an IDE. I tested this in [CLion](https://www.jetbrains.com/clion/), 
 which I personally use and is free for non-commercial use.
 
-#### Pre-requisites
+#### Pre-requisites:
 - CLion (or another IDE of your choice)
 - The `xkbcommon` development package ([Linux only](https://www.glfw.org/docs/3.4/compile.html#compile_deps))
 - The `Wayland` and/or `X11` development packages ([Linux only](https://www.glfw.org/docs/3.4/compile.html#compile_deps))
@@ -71,6 +72,34 @@ but building using the terminal shouldn't be too difficult if you've used it bef
 > [!NOTE]
 > On Linux: if you don't want to install both Wayland and X11,
 > you can build for only one using the [respective CMake options](https://www.glfw.org/docs/3.4/compile_guide.html#compile_options_unix).
+
+### For the Web
+This project can also be run on the web! It's a bit finicky, so be warned.
+
+#### Pre-requisites
+- [CMake](https://cmake.org/download/)
+- [Emscripten](https://emscripten.org/docs/getting_started/downloads.html) (on Windows, in your PATH)
+- [Python 3.8](https://www.python.org/downloads/) or above.
+- [LLVM/ Clang](https://github.com/mstorsjo/llvm-mingw)
+- Xcode Command Line Tools (MacOS Only)
+- 10.14 Mojave or above (MacOS Only)
+
+#### Steps:
+In the root project folder, run `web-build.bat` (if you're on Windows), 
+or run the following commands in your terminal:
+```bash
+# Generate the cmake files. We're building from source, 
+# since I couldn't get the pre-compiled option to work.
+emcmake cmake -B build\web -DWEBGPU_BACKEND=EMDAWNWEBGPU -DWEBGPU_BUILD_FROM_SOURCE=ON
+
+# Clean the build directory and then build the project.
+# (The --clean-first flag is optional.)
+cmake --build build\web --clean-first
+
+# Run the app
+# Will be available at http://localhost:8000/App.html
+python -m http.server -d build\web\dist\Emscripten
+```
 
 ## Contributing
 Follow the included style! (`.clang-format`)
