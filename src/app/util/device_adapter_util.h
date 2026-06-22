@@ -4,7 +4,7 @@
 
 #ifndef DEVICE_ADAPTER_UTIL_H
 #define DEVICE_ADAPTER_UTIL_H
-#include <webgpu.h>
+#include <webgpu/webgpu.hpp>
 
 // #include <webgpu/webgpu.hpp>
 

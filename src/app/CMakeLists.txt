@@ -19,8 +19,13 @@ if (XCODE)
 endif ()
 
 if (EMSCRIPTEN)
+    target_link_options(App PRIVATE
+            -sUSE_GLFW=3
+            -sASYNCIFY
+            -sALLOW_MEMORY_GROWTH
+    )
+
     set_target_properties(App PROPERTIES SUFFIX ".html")
-    target_link_options(App PRIVATE -sASYNCIFY)
 endif ()
 
 target_copy_webgpu_binaries(App)
