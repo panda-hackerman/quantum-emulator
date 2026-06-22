@@ -4,4 +4,6 @@
 **/cmake-build-*/
 **/build-*/
 
+**/imgui.ini
+
 CMakeUserPresets.json

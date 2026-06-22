@@ -4,7 +4,7 @@
 
 #ifndef WGPU_STRING_VIEW_UTIL_H
 #define WGPU_STRING_VIEW_UTIL_H
-#include <webgpu.h>
+#include <webgpu/webgpu.hpp>
 
 #include <string>
 
