@@ -67,15 +67,15 @@ struct MatrixDataType {
   [[nodiscard]] virtual constexpr T *Data() noexcept { return entries.data(); }
   [[nodiscard]] virtual constexpr const T *Data() const noexcept { return entries.data(); }
 
-  MatrixDataType(const MatrixDataType &other) : entries(other.entries) {}
-  MatrixDataType(MatrixDataType &&other) noexcept : entries(std::move(other.entries)) {}
+  constexpr MatrixDataType(const MatrixDataType &other) : entries(other.entries) {}
+  constexpr MatrixDataType(MatrixDataType &&other) noexcept : entries(std::move(other.entries)) {}
 
-  MatrixDataType &operator=(const MatrixDataType &other) {
+  constexpr MatrixDataType &operator=(const MatrixDataType &other) {
     if (this != &other) entries = other.entries;
     return *this;
   }
 
-  MatrixDataType &operator=(MatrixDataType &&other) noexcept {
+  constexpr MatrixDataType &operator=(MatrixDataType &&other) noexcept {
     if (this != &other) entries = std::move(other.entries);
     return *this;
   }
@@ -99,12 +99,12 @@ struct MatrixDataType<T, matrix::kDynamicSize, matrix::kDynamicSize> {
   constexpr MatrixDataType(const MatrixDataType &other) : entries(other.entries) {}
   constexpr MatrixDataType(MatrixDataType &&other) noexcept : entries(std::move(other.entries)) {}
 
-  MatrixDataType &operator=(const MatrixDataType &other) {
+  constexpr MatrixDataType &operator=(const MatrixDataType &other) {
     if (this != &other) entries = other.entries;
     return *this;
   }
 
-  MatrixDataType &operator=(MatrixDataType &&other) noexcept {
+  constexpr MatrixDataType &operator=(MatrixDataType &&other) noexcept {
     if (this != &other) entries = std::move(other.entries);
     return *this;
   }
@@ -214,12 +214,12 @@ public:
 
   friend bool operator!=(const Matrix2D &lhs, const Matrix2D &rhs) { return !(lhs == rhs); }
 
-  Matrix2D<T> WithNewSize(const std::size_t new_cols, const std::size_t new_rows) {
+  Matrix2D<T> WithNewSize(const std::size_t new_rows, const std::size_t new_cols) {
     if (new_cols == num_cols_ && new_rows == num_rows_) {
       return *this;
     }
 
-    Matrix2D<T> out{new_cols, new_rows};
+    Matrix2D<T> out{new_rows, new_cols};
 
     const std::size_t min_row = std::min(num_rows_, new_rows);
     const std::size_t min_col = std::min(num_cols_, new_cols);
