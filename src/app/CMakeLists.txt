@@ -6,10 +6,11 @@ add_executable(App main.cc
         util/settings_constants.h
         application/application.cc
         application/application.h
-        application/editor_window_manager.cc
-        application/editor_window_manager.h
+        editor_windows/editor_window_manager.cc
+        editor_windows/editor_window_manager.h
         application/device_window.h
         application/device_window.cc
+        editor_windows/custom_windows.h
 )
 
 target_link_libraries(App PRIVATE Engine)

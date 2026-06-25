@@ -7,7 +7,6 @@
 #include <cstdint>
 
 #include "collections/compile_time_map.h"
-#include "collections/sparse_set.h"
 #include "gate_matrices.h"
 
 struct CircuitPart {
@@ -69,7 +68,7 @@ private:
   Matrix2D<GateID> part_id_grid_;
 
 public:
-  Circuit(const GridSize_T num_qubits, const GridSize_T num_layers) :
+  constexpr Circuit(const GridSize_T num_qubits, const GridSize_T num_layers) :
       num_qubits_{num_qubits}, num_layers_{num_layers}, part_id_grid_{num_qubits, num_layers} {}
 
   [[nodiscard]] constexpr GridSize_T NumQubits() const noexcept { return num_qubits_; }
@@ -79,12 +78,11 @@ public:
   void SetNumLayers(GridSize_T new_num_layers);
   void SetNewSize(GridSize_T new_num_qubits, std::uint8_t new_num_layers);
 
-  bool IsInBounds(GridSize_T qubit, GridSize_T layer) const;
+  [[nodiscard]] bool IsInBounds(GridSize_T qubit, GridSize_T layer) const;
+  [[nodiscard]] GateID GetIdAt(GridSize_T qubit, GridSize_T layer);
+  [[nodiscard]] const CircuitPart &GetCircuitPart(GridSize_T qubit, GridSize_T layer);
 
   void SetCircuitPart(GridSize_T qubit, GridSize_T layer, GateID id);
-
-  GateID GetIdAt(GridSize_T qubit, GridSize_T layer);
-  const CircuitPart &GetCircuitPart(GridSize_T qubit, GridSize_T layer);
 };
 
 // static Circuit BuildExampleCircuit();

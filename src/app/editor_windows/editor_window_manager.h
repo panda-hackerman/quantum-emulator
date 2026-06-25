@@ -13,7 +13,7 @@
 struct EditorWindow {
   const char *name;
   std::function<void()> on_draw;
-  ImGuiWindowFlags_ flags = ImGuiWindowFlags_NoCollapse;
+  ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse;
   bool can_close = true;
   bool open = true;
 };
@@ -23,7 +23,7 @@ private:
   bool is_initialized_ = false;
   std::vector<EditorWindow> windows_;
 
-  Circuit circuit{3, 3};
+  Circuit circuit_{3, 3};
 
 public:
 #ifndef __ESCRIPTEN__

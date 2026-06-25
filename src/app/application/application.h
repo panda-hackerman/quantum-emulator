@@ -7,8 +7,8 @@
 
 #include <webgpu/webgpu.hpp>
 
+#include "../editor_windows/editor_window_manager.h"
 #include "device_window.h"
-#include "editor_window_manager.h"
 
 constexpr WGPUColor kWindowClearColor = {100 / 255.0, 149 / 255.0, 237 / 255.0, 1};
 
