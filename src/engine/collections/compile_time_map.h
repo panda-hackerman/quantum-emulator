@@ -17,6 +17,8 @@ struct CTEntry {
   ValType val;
 };
 
+//TODO: Solution without runtime overhead? Does it matter?
+
 /// A map whose elements are known at compile-time.
 template <typename KeyType, typename ValType, std::size_t N>
 class CompileTimeMap {
@@ -30,8 +32,8 @@ private:
   }
 
 public:
-  using Iterator = const Entry *;
-  using ConstIterator = const Entry *;
+  using Iterator = std::array<Entry, N>::iterator;
+  using ConstIterator = std::array<Entry, N>::const_iterator;
 
   template <std::convertible_to<Entry>... Entries>
     requires(sizeof...(Entries) == N)
@@ -60,15 +62,20 @@ public:
   }
 
   [[nodiscard]] constexpr std::size_t Size() const noexcept {
-    return std::extent_v<decltype(entries_)>; // return N;
+    return entries_.size();
+    // return std::extent_v<decltype(entries_)>; // return N;
   }
 
   [[nodiscard]] constexpr const ValType &operator[](KeyType key) const { return Get(key); }
 
-  constexpr Iterator begin() const noexcept { return entries_; }
-  constexpr Iterator end() const noexcept { return entries_ + N; }
-  constexpr ConstIterator cbegin() const noexcept { return entries_; }
-  constexpr ConstIterator cend() const noexcept { return entries_ + N; }
+  constexpr Iterator begin() noexcept { return entries_.begin(); }
+  constexpr ConstIterator begin() const noexcept { return entries_.begin(); }
+
+  constexpr Iterator end() noexcept { return entries_.end(); }
+  constexpr ConstIterator end() const noexcept { return entries_.end(); }
+
+  constexpr ConstIterator cbegin() const noexcept { return entries_.cbegin(); }
+  constexpr ConstIterator cend() const noexcept { return entries_.cend(); }
 };
 
 namespace ct_map::internal {

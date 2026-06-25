@@ -5,8 +5,8 @@ add_library(Engine
         collections/compile_time_map.h
         collections/sparse_set.h
         math/matrix.h
-        quantum_circuit/circuit.cc
         quantum_circuit/circuit.h
+        quantum_circuit/circuit.cc
         quantum_circuit/gate_matrices.h
         util/print_util.h
 )

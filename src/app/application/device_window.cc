@@ -6,7 +6,6 @@
 
 #include <GLFW/glfw3.h>
 
-#include <iostream>
 #include <webgpu/webgpu.hpp>
 
 #include "application.h"
@@ -24,7 +23,7 @@ bool DeviceWindow::Init() {
 
   glfwSetWindowUserPointer(window_, this);
   glfwSetFramebufferSizeCallback(window_, [](GLFWwindow *window, const int w, const int h) {
-    if (w == 0 || h == 0) return; //Window was minimized...
+    if (w == 0 || h == 0) return; // Window was minimized...
     if (const auto ptr = reinterpret_cast<DeviceWindow *>(glfwGetWindowUserPointer(window)); ptr) {
       ptr->OnResize(w, h); // Callback calls the resize callback
     }

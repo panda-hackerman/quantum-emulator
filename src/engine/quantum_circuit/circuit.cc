@@ -5,7 +5,6 @@
 #include "circuit.h"
 
 #include <format>
-#include <utility>
 
 void Circuit::SetNumQubits(const GridSize_T new_num_qubits) {
   SetNewSize(new_num_qubits, num_layers_);
@@ -29,7 +28,8 @@ void Circuit::SetNewSize(const GridSize_T new_num_qubits, const GridSize_T new_n
   num_layers_ = new_num_layers;
 }
 
-void Circuit::SetCircuitPart(const GridSize_T qubit, const GridSize_T layer, const GateID id) {
+void Circuit::SetCircuitPart(const GridSize_T qubit, const GridSize_T layer,
+                                       const GateID id) {
   if (!gates::kIdToGateMap.Contains(id)) {
     throw std::invalid_argument("Trying to assign a part, but a part with that ID doesn't exist!");
   }

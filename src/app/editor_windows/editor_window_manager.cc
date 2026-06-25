@@ -7,8 +7,9 @@
 #include <imgui.h>
 
 #include <filesystem>
-#include <utility>
 
+#include "custom_windows.h"
+#include "imgui_internal.h"
 #include "quantum_circuit/circuit.h"
 
 void EditorWindowManager::Init() {
@@ -42,8 +43,6 @@ void EditorWindowManager::Init() {
   io.MouseDrawCursor = true; // Show mouse cursor on web platform
 #endif
 
-  circuit_.SetCircuitPart(0, 0, gates::kTGate);
-
   ResetWindows();
 
   is_initialized_ = true;
@@ -59,17 +58,38 @@ void EditorWindowManager::Terminate() {
 
 void EditorWindowManager::DrawWindows() {
 
-  // ImGui::ShowDemoWindow();
+  /* SETUP DOCKING*/ {
+    const ImGuiID dock_space_id = ImGui::GetID("Docking Space");
+    const ImGuiViewport *viewport = ImGui::GetMainViewport();
+
+    if (ImGui::DockBuilderGetNode(dock_space_id) == nullptr) {
+      ImGui::DockBuilderAddNode(dock_space_id, ImGuiDockNodeFlags_DockSpace);
+      ImGui::DockBuilderSetNodeSize(dock_space_id, viewport->Size);
+
+      ImGuiID dock_id_left = 0;
+      ImGuiID dock_id_main = dock_space_id;
+      ImGui::DockBuilderSplitNode(dock_id_main, ImGuiDir_Left, 0.20f, &dock_id_left, &dock_id_main);
+      ImGuiID dock_id_left_top = 0;
+      ImGuiID dock_id_left_bottom = 0;
+      ImGui::DockBuilderSplitNode(dock_id_left, ImGuiDir_Up, 0.50f, &dock_id_left_top,
+                                  &dock_id_left_bottom);
+      ImGui::DockBuilderDockWindow("Circuit Diagram", dock_id_main);
+      // ImGui::DockBuilderDockWindow("Properties", dock_id_left_top);
+      ImGui::DockBuilderDockWindow("Circuits", dock_id_left_bottom);
+      ImGui::DockBuilderFinish(dock_space_id);
+    }
+
+    ImGui::DockSpaceOverViewport(dock_space_id, viewport, ImGuiDockNodeFlags_PassthruCentralNode);
+  }
 
   for (EditorWindow &window : windows_) {
     if (!window.open) continue;
 
     bool *is_open = window.can_close ? &window.open : nullptr;
-
     ImGui::Begin(window.name, is_open, window.flags);
 
     try {
-      window.on_draw();
+      std::invoke(window.on_draw);
     } catch (const std::exception &e) {
       throw std::runtime_error("Ran into an error while drawing window '" +
                                std::string(window.name) + "': " + e.what());
@@ -82,82 +102,44 @@ void EditorWindowManager::DrawWindows() {
   }
 }
 
-constexpr void EditorWindowManager::ResetWindows() {
+void EditorWindowManager::ResetWindows() {
   windows_.clear();
+  circuit_ = Circuit::BuildExampleCircuit();
 
+  // Build windows
   windows_.emplace_back(EditorWindow{
       .name = "Circuit Diagram",
-      .on_draw =
-          [&] {
-            static int num_qubits = 3;
-            static int num_layers = 3;
+      .on_draw = [&] { circuit_window_.Draw(); },
+      .flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_AlwaysAutoResize,
+      .can_close = false,
+  });
 
-            ImGui::PushItemWidth(100);
-            ImGui::InputInt("Num Qubits", &num_qubits);
-            ImGui::SameLine();
-            ImGui::InputInt("Num Layers", &num_layers);
+  windows_.emplace_back(EditorWindow{
+      .name = "Circuits",
+      .on_draw = [] {
+            constexpr std::size_t kNumElems = gates::kIdToGateMap.Size();
+            constexpr ImVec2 kButtonSize{60, 60};
 
-            // Update Size
-            num_qubits =
-                std::clamp<int>(num_qubits, gates::kMinCircuitQubits, gates::kMaxCircuitQubits);
-            num_layers =
-                std::clamp<int>(num_layers, gates::kMinCircuitDepth, gates::kMaxCircuitDepth);
+            const ImGuiStyle &style = ImGui::GetStyle();
+            const float window_visible_x2 = ImGui::GetCursorScreenPos().x + ImGui::GetContentRegionAvail().x;
 
-            if (std::cmp_not_equal(num_qubits, circuit_.NumQubits()) ||
-                std::cmp_not_equal(num_layers, circuit_.CircuitDepth())) {
-              circuit_.SetNewSize(static_cast<Circuit::GridSize_T>(num_qubits),
-                                  static_cast<Circuit::GridSize_T>(num_layers));
-            }
+            int i = 0;
+            for (const auto &[id, part] : gates::kIdToGateMap) {
+              ImGui::PushID(id);
 
-            // Table
-            constexpr ImGuiTableFlags table_flags = ImGuiTableFlags_Borders |
-                                                    ImGuiTableFlags_NoHostExtendX |
-                                                    ImGuiTableFlags_SizingFixedFit;
+              const char *name = part.name == nullptr ? "" : part.name;
+              ImGui::Button(name, kButtonSize);
 
-            // Actually draw
-            if (ImGui::BeginTable("Circuit Diagram", num_layers + 1, table_flags)) {
-              // Setup Columns
-              ImGui::TableSetupColumn(
-                  "", ImGuiTableColumnFlags_NoReorder | ImGuiTableColumnFlags_NoResize);
+              const float last_button_x2 = ImGui::GetItemRectMax().x;
+              const float next_button_x2 = last_button_x2 + style.ItemSpacing.x + kButtonSize.x;
 
-              for (Circuit::GridSize_T i = 0; std::cmp_less(i, num_layers); ++i) {
-                ImGui::TableSetupColumn(
-                    std::format("Layer {}", i).data(),
-                    ImGuiTableColumnFlags_NoReorder | ImGuiTableColumnFlags_NoResize);
+              if (++i < kNumElems && next_button_x2 < window_visible_x2) {
+                ImGui::SameLine();
               }
 
-              ImGui::TableHeadersRow();
-              // Loop over actual grid
-              for (Circuit::GridSize_T qubit = 0; std::cmp_less(qubit, num_qubits); ++qubit) {
-                ImGui::PushID(qubit);
-                ImGui::TableNextRow();
-                ImGui::TableSetColumnIndex(0);
-                ImGui::AlignTextToFramePadding();
-                ImGui::Text("q%d", qubit);
-
-                for (Circuit::GridSize_T l = 1; std::cmp_less_equal(l, num_layers); ++l) {
-                  const Circuit::GridSize_T layer = l - 1;
-
-                  ImGui::PushID(layer);
-
-                  ImGui::TableSetColumnIndex(l);
-
-                  const int button_id = layer + (num_layers * qubit);
-                  const CircuitPart &part = circuit_.GetCircuitPart(qubit, layer);
-
-                  const char *name = part.name == nullptr ? "" : part.name;
-                  const std::string label = std::format("{}##{}", name, button_id);
-                  ImGui::Button(label.data(), ImVec2{60, 60});
-                  ImGui::PopID();
-                }
-                ImGui::PopID();
-              }
-
-              ImGui::EndTable();
+              ImGui::PopID();
             }
           },
-      .flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_AlwaysAutoResize |
-               ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoResize,
       .can_close = false,
   });
 }

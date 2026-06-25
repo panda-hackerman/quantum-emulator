@@ -25,6 +25,7 @@ inline constexpr std::size_t kMaxCircuitDepth = 16;
 
 enum GateID : std::uint16_t {
   kNullGate,
+  kControlBit,
   kIdentityGate,
   kPauliXGate,
   kPauliYGate,
@@ -38,6 +39,7 @@ static_assert(1 << (sizeof(GateID) * 8) > kMaxCircuitQubits * kMaxCircuitDepth);
 
 inline constexpr auto kIdToGateMap = CTMapBuilder<GateID, CircuitPart>({
     {kNullGate, {nullptr, nullptr}},
+    {kControlBit, {"*", nullptr}},
     {kIdentityGate, {"Identity", &matrix::kIdentity}},
     {kPauliXGate, {"PauliX", &matrix::kPauliX}},
     {kPauliYGate, {"kPauliY", &matrix::kPauliY}},
@@ -83,8 +85,32 @@ public:
   [[nodiscard]] const CircuitPart &GetCircuitPart(GridSize_T qubit, GridSize_T layer);
 
   void SetCircuitPart(GridSize_T qubit, GridSize_T layer, GateID id);
-};
 
-// static Circuit BuildExampleCircuit();
+  /**
+   * @return An example circuit.
+   *
+   * Builds a simple example circuit.
+   * @code
+   * q0 |0> ---X-Z---
+   * q1 |0> -H-*---*-
+   * q2 |0> -X-----X-
+   */
+  static Circuit BuildExampleCircuit() {
+    Circuit circuit{3, 4};
+
+    circuit.SetCircuitPart(1, 0, gates::kHadamardGate);
+    circuit.SetCircuitPart(2, 0, gates::kPauliXGate);
+
+    circuit.SetCircuitPart(0, 1, gates::kPauliXGate);
+    circuit.SetCircuitPart(1, 1, gates::kControlBit);
+
+    circuit.SetCircuitPart(0, 2, gates::kPauliZGate);
+
+    circuit.SetCircuitPart(1, 3, gates::kControlBit);
+    circuit.SetCircuitPart(2, 3, gates::kPauliXGate);
+
+    return circuit;
+  }
+};
 
 #endif // CIRCUIT_H

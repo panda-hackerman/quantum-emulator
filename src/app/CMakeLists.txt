@@ -11,6 +11,7 @@ add_executable(App main.cc
         application/device_window.h
         application/device_window.cc
         editor_windows/custom_windows.h
+        editor_windows/custom_windows.cc
 )
 
 target_link_libraries(App PRIVATE Engine)

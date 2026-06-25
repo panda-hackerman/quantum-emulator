@@ -7,13 +7,14 @@
 
 #include <webgpu/webgpu.hpp>
 
+#include "custom_windows.h"
 #include "imgui.h"
 #include "quantum_circuit/circuit.h"
 
 struct EditorWindow {
   const char *name;
   std::function<void()> on_draw;
-  ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse;
+  ImGuiWindowFlags flags = ImGuiWindowFlags_None;
   bool can_close = true;
   bool open = true;
 };
@@ -23,7 +24,12 @@ private:
   bool is_initialized_ = false;
   std::vector<EditorWindow> windows_;
 
-  Circuit circuit_{3, 3};
+  Circuit circuit_ = Circuit::BuildExampleCircuit();
+  CircuitEditorWindow circuit_window_{.circuit = &circuit_,
+                                      .data = {
+                                          .num_qubits = circuit_.NumQubits(),
+                                          .num_layers = circuit_.CircuitDepth(),
+                                      }};
 
 public:
 #ifndef __ESCRIPTEN__
@@ -33,7 +39,7 @@ public:
 #endif
 
   void Init();
-  constexpr void ResetWindows();
+  void ResetWindows();
   void DrawWindows();
   void Terminate();
 
