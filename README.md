@@ -11,6 +11,7 @@ to serve as an educational tool, and to be reasonably optimized.
   - [How to compile using an IDE](#using-an-ide)
   - [How to compile using the commandline](#using-the-commandline)
   - [How to compile for the web](#for-the-web)
+- [Running Tests](#running-tests)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -39,7 +40,8 @@ which I personally use and is free for non-commercial use.
 #### Steps:
 - Open the top-level project folder in the IDE.
 - The "Open Project Wizard" will prompt you to select which build profiled you would like to use.
-Enable `debug-wgpu` and `release-wgpu` (optional), and disable `Debug`, which was enabled by default.
+Enable `debug-wgpu`, `release-wgpu` (optional), and `gtest-wgpu` (if you want to [run tests](#running-tests));
+and disable `Debug`, which was enabled by default.
 - Click OK, and CMake should set up the project for you (wait for the progress bar in the bottom right).
 - In the top right, select your prefered profile (`debug-wgpu` or `release-wgpu`),
 ensure that "**App**" is selected as the configuration, and click the green play button.
@@ -101,6 +103,26 @@ cmake --build build\web --clean-first
 python -m http.server -d build\web\dist\Emscripten
 ```
 
+## Running Tests
+This project uses GoogleTest (gtest) for running C++ tests.
+
+### Tests in an IDE
+Running the tests in an IDE is straightforwward, most have build-in support. 
+For example, in CLion, simply select `EngineTest` from the configurations dropdown in the top right.
+
+> [!TIP]
+> Make sure that the CMake profile is enabled in CLion!
+
+### Tests from the Commandline
+See [compiling using the commandline](#using-the-commandline). 
+The process is the same as compiling normally, you just have to choose the `gtest-wgpu` profile.
+
+After building, if you try to open `EngineTest.exe` from the file explorer, it will open and close immediately. 
+To keep it open (so you can actually see the results), run the program from the commandline:
+```cmd
+.\build\gtest-wgpu\dist\<platform>\EngineTest.exe
+```
+
 ## Contributing
 Follow the included style! (`.clang-format`)
 
@@ -111,7 +133,9 @@ This project uses the following third-party libraries:
 - [Dear ImGUI](https://github.com/ocornut/imgui) ([MIT License](https://github.com/ocornut/imgui/blob/master/LICENSE.txt))
 - [GLFW](https://github.com/glfw/glfw) ([Zlib License](https://github.com/glfw/glfw/blob/master/LICENSE.md))
 - [GLFW WebGPU Extension](https://github.com/eliemichel/glfw3webgpu) ([MIT License](https://github.com/eliemichel/glfw3webgpu/blob/main/LICENSE.txt))
+- [Google Test](https://github.com/google/googletest) ([BSD 3-Clause "New" or "Revised" License](https://github.com/google/googletest/blob/main/LICENSE))
 - [WebGPU Distribution](https://github.com/eliemichel/WebGPU-distribution) ([MIT License](https://github.com/eliemichel/WebGPU-distribution/blob/main/LICENSE.txt))
+
 
 The WebGPU distribution can be configured to use the following third-party backends (though only one is used at once):
 - [Dawn](https://dawn.googlesource.com/dawn) ([Apache 2.0 License](https://dawn.googlesource.com/dawn/+/HEAD/LICENSE))
