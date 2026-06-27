@@ -8,6 +8,15 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/dist/${CMAKE_SYSTEM_NAME})
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/dist/${CMAKE_SYSTEM_NAME})
 
+# -- TESTING -- #
+option(TEST_BUILD "Build tests?" OFF)
+
+if (TEST_BUILD)
+    enable_testing()
+    add_subdirectory(test)
+    message(STATUS ">>> Testing enabled! :3")
+endif ()
+
 # -- LIBRARIES -- #
 if (NOT EMSCRIPTEN)
     add_subdirectory(vendor/glfw)
@@ -41,13 +50,18 @@ endif()
 
 # -- ADD SUBDIRECTORIES -- #
 add_subdirectory(src/engine)
-add_subdirectory(src/app)
+
+if (NOT TEST_BUILD)
+    add_subdirectory(src/app)
+endif ()
 
 # -- COMPILE OPTIONS -- #
-if (MSVC)
-    target_compile_options(App PRIVATE /W4 /WX)
-else ()
-    target_compile_options(App PRIVATE -Wall)
+if (NOT TEST_BUILD)
+    if (MSVC)
+        target_compile_options(App PRIVATE /W4 /WX)
+    else ()
+        target_compile_options(App PRIVATE -Wall)
+    endif ()
 endif ()
 
 set(CMAKE_CXX_FLAGS_DEBUG "-g")

@@ -11,3 +11,6 @@
 [submodule "vendor/glfw3webgpu"]
 	path = vendor/glfw3webgpu
 	url = https://github.com/eliemichel/glfw3webgpu.git
+[submodule "vendor/gtest"]
+	path = vendor/gtest
+	url = https://github.com/google/googletest.git
