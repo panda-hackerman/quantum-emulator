@@ -177,7 +177,7 @@ protected:
     const std::size_t num_rows;
     const std::size_t num_cols;
 
-    constexpr Builder(const std::size_t num_cols, const std::size_t num_rows) :
+    constexpr Builder(const std::size_t num_rows, const std::size_t num_cols) :
         data(num_rows, std::vector<T>(num_cols)), num_rows{num_rows}, num_cols{num_cols} {}
 
     constexpr void Put(std::size_t r, std::size_t c, const T &element) { data[r][c] = element; }
@@ -292,21 +292,23 @@ public:
   [[nodiscard]] constexpr Row_T operator[](const std::size_t row) { return At(row); }
   [[nodiscard]] constexpr RowConst_T operator[](const std::size_t row) const { return At(row); }
 
-  friend bool operator==(const Matrix2D &lhs, const Matrix2D &rhs) {
-    if (lhs.num_rows_ != rhs.num_rows_ || lhs.num_cols_ != rhs.num_cols_) {
-      return false; // Must be the same size
+  template <typename T, std::size_t R, std::size_t C>
+  friend constexpr bool operator==(const Matrix2D &lhs, const Matrix2D<T, R, C> &rhs) {
+    if (lhs.NumRows() != rhs.NumRows() || lhs.NumCols() != rhs.NumCols()) {
+      return false;
     }
 
-    for (std::size_t r = 0; r < lhs.num_rows_; ++r) {
-      for (std::size_t c = 0; c < lhs.num_cols_; ++c) {
-        if (lhs.At(r, c) != rhs.At(r, c)) return false;
+    for (std::size_t r = 0; r < lhs.NumRows(); ++r) {
+      for (std::size_t c = 0; c < lhs.NumCols(); ++c) {
+        if (!(lhs.At(r, c) == rhs.At(r, c))) return false;
       }
     }
 
     return true;
   }
 
-  friend bool operator!=(const Matrix2D &lhs, const Matrix2D &rhs) { return !(lhs == rhs); }
+  template <typename T, std::size_t R, std::size_t C>
+  friend constexpr bool operator!=(const Matrix2D &lhs, const Matrix2D<T, R, C> &rhs) { return !(lhs == rhs); }
 
   Matrix2D<Type> WithNewSize(const std::size_t new_rows, const std::size_t new_cols) {
     if (new_cols == NumCols() && new_rows == NumRows()) {
