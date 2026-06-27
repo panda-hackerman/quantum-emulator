@@ -1,6 +1,4 @@
 add_library(Engine
-        engine.h
-        engine.cc
         collections/bimap.h
         collections/compile_time_map.h
         collections/sparse_set.h
