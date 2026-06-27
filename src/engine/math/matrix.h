@@ -246,7 +246,7 @@ public:
 
   constexpr ~Matrix2D() override = default;
 
-  constexpr explicit(false) Matrix2D(const std::size_t num_rows, const std::size_t num_cols)
+  explicit(false) Matrix2D(const std::size_t num_rows, const std::size_t num_cols)
     requires(kIsDynamic)
       : DataHolderType{num_rows, num_cols} {}
 

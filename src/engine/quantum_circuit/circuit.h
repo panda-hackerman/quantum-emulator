@@ -70,7 +70,7 @@ private:
   Matrix2D<GateID> part_id_grid_;
 
 public:
-  constexpr Circuit(const GridSize_T num_qubits, const GridSize_T num_layers) :
+  Circuit(const GridSize_T num_qubits, const GridSize_T num_layers) :
       num_qubits_{num_qubits}, num_layers_{num_layers}, part_id_grid_{num_qubits, num_layers} {}
 
   [[nodiscard]] constexpr GridSize_T NumQubits() const noexcept { return num_qubits_; }
