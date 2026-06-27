@@ -18,8 +18,8 @@ using GateMatrix = ComplexMatrix<1 << Qubits, 1 << Qubits>;
 
 inline constexpr float kSqrt2 = 1.414214f; // = std::sqrt(2) (which bafflingly isn't constexpr)
 inline constexpr std::complex<float> kIm = {0, 1}; ///< i = std::sqrt(-1)
-inline constexpr std::complex<float> kNorm = {1 / kSqrt2, 0}; ///< normalization constant, i.e, 1/sqrt(2).
-inline constexpr std::complex<float> kRot4 = {1 / kSqrt2, 1 / kSqrt2}; ///< = exp (i * pi / 4) = 45 deg
+inline constexpr std::complex<float> kNorm = {1 / kSqrt2, 0}; ///< normalization constant: 1/sqrt(2)
+inline constexpr std::complex<float> kRot4 = {1 / kSqrt2, 1 / kSqrt2}; ///< = exp (i * pi / 4) = 45°
 
 inline constexpr GateMatrix<1> kIdentity = {{{
     {1, 0},
@@ -66,6 +66,14 @@ inline constexpr GateMatrix<2> kControlledNotAbove = {{{
     {0, 0, 1, 0},
     {0, 1, 0, 0},
 }}};
+
+inline constexpr GateMatrix<1> kNothing = {{{
+    {-kIm, 0},
+    {3, 4},
+}}};
+
+inline constexpr GateMatrix<1> kNothingTranspose = kNothing.Transposed();
+// inline constexpr Matrix2D<int> m = {2, 3};
 
 } // namespace matrix
 

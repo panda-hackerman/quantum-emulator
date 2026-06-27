@@ -6,6 +6,7 @@
 #define CONST_MAP_H
 #include <array>
 #include <stdexcept>
+#include <utility>
 
 /// Entry for a compile-time map
 template <typename KeyType, typename ValType>
@@ -63,7 +64,6 @@ public:
 
   [[nodiscard]] constexpr std::size_t Size() const noexcept {
     return entries_.size();
-    // return std::extent_v<decltype(entries_)>; // return N;
   }
 
   [[nodiscard]] constexpr const ValType &operator[](KeyType key) const { return Get(key); }
