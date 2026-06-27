@@ -26,6 +26,20 @@
         "WEBGPU_BACKEND": "WGPU",
         "WEBGPU_BUILD_FROM_SOURCE": "OFF"
       }
+    },
+    {
+      "name": "gtest-wgpu",
+      "displayName": "Engine test (WGPU Native)",
+      "description": "Test the engine using WebGPU Native",
+      "binaryDir": "${sourceDir}/build/gtest-wgpu",
+      "generator": "Ninja",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "BUILD_SHARED_LIBS": "OFF",
+        "WEBGPU_BACKEND": "WGPU",
+        "WEBGPU_BUILD_FROM_SOURCE": "OFF",
+        "TEST_BUILD": "ON"
+      }
     }
   ]
 }

@@ -8,6 +8,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/dist/${CMAKE_SYSTEM_NAME})
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/dist/${CMAKE_SYSTEM_NAME})
 
+option(TEST_BUILD "Build tests?" OFF)
+
 # -- LIBRARIES -- #
 if (NOT EMSCRIPTEN)
     add_subdirectory(vendor/glfw)
@@ -19,6 +21,15 @@ endif ()
 add_subdirectory(vendor/webgpu)
 add_subdirectory(vendor/glfw3webgpu)
 add_subdirectory(vendor/imgui)
+
+if (TEST_BUILD)
+    set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+    add_subdirectory(vendor/gtest EXCLUDE_FROM_ALL)
+    add_subdirectory(test)
+
+    enable_testing()
+    message(STATUS ">>> Testing enabled! :3")
+endif ()
 
 # -- COMPILE DEFS -- #
 if ((WEBGPU_BACKEND STREQUAL "DAWN") OR (WEBGPU_BACKEND STREQUAL "EMSCRIPTEN"))
@@ -41,13 +52,18 @@ endif()
 
 # -- ADD SUBDIRECTORIES -- #
 add_subdirectory(src/engine)
-add_subdirectory(src/app)
+
+if (NOT TEST_BUILD)
+    add_subdirectory(src/app)
+endif ()
 
 # -- COMPILE OPTIONS -- #
-if (MSVC)
-    target_compile_options(App PRIVATE /W4 /WX)
-else ()
-    target_compile_options(App PRIVATE -Wall)
+if (NOT TEST_BUILD)
+    if (MSVC)
+        target_compile_options(App PRIVATE /W4 /WX)
+    else ()
+        target_compile_options(App PRIVATE -Wall)
+    endif ()
 endif ()
 
 set(CMAKE_CXX_FLAGS_DEBUG "-g")
