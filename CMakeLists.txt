@@ -8,14 +8,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/dist/${CMAKE_SYSTEM_NAME})
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/dist/${CMAKE_SYSTEM_NAME})
 
-# -- TESTING -- #
 option(TEST_BUILD "Build tests?" OFF)
-
-if (TEST_BUILD)
-    enable_testing()
-    add_subdirectory(test)
-    message(STATUS ">>> Testing enabled! :3")
-endif ()
 
 # -- LIBRARIES -- #
 if (NOT EMSCRIPTEN)
@@ -28,6 +21,15 @@ endif ()
 add_subdirectory(vendor/webgpu)
 add_subdirectory(vendor/glfw3webgpu)
 add_subdirectory(vendor/imgui)
+
+if (TEST_BUILD)
+    set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+    add_subdirectory(vendor/gtest EXCLUDE_FROM_ALL)
+    add_subdirectory(test)
+
+    enable_testing()
+    message(STATUS ">>> Testing enabled! :3")
+endif ()
 
 # -- COMPILE DEFS -- #
 if ((WEBGPU_BACKEND STREQUAL "DAWN") OR (WEBGPU_BACKEND STREQUAL "EMSCRIPTEN"))
