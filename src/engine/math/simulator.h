@@ -5,4 +5,8 @@
 #ifndef SIMULATOR_H
 #define SIMULATOR_H
 
+constexpr auto ComputeLayer() {
+
+}
+
 #endif // SIMULATOR_H

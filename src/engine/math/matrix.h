@@ -59,39 +59,59 @@ inline constexpr bool valid_matrix_v = (is_dynamic_v<Rows> == is_dynamic_v<Cols>
 
 /**
  * Interface for a 2D matrix of values.
- * @tparam T The type of the entries of the matrix.
+ * @tparam Type The type of the entries of the matrix.
  */
-template <typename T>
+template <typename Type>
 class IMatrix2D {
 public:
+  using Value_T = Type;
+
   virtual ~IMatrix2D() = default;
 
   [[nodiscard]] virtual constexpr std::size_t NumRows() const noexcept = 0;
   [[nodiscard]] virtual constexpr std::size_t NumCols() const noexcept = 0;
 
-  [[nodiscard]] virtual constexpr T &At(std::size_t row, std::size_t col) = 0;
-  [[nodiscard]] virtual constexpr const T &At(std::size_t row, std::size_t col) const = 0;
+  [[nodiscard]] virtual constexpr Type &At(std::size_t row, std::size_t col) = 0;
+  [[nodiscard]] virtual constexpr const Type &At(std::size_t row, std::size_t col) const = 0;
+
+  template <typename T>
+  friend bool operator==(const IMatrix2D &lhs, const IMatrix2D<T> &rhs) {
+    if (lhs.NumRows() != rhs.NumRows() || lhs.NumCols() != rhs.NumCols()) {
+      return false;
+    }
+
+    for (std::size_t r = 0; r < lhs.NumRows(); ++r) {
+      for (std::size_t c = 0; c < lhs.NumCols(); ++c) {
+        if (!(lhs.At(r, c) == rhs.At(r, c))) return false;
+      }
+    }
+
+    return true;
+  }
+
+  template <typename T>
+  friend bool operator!=(const IMatrix2D &lhs, const IMatrix2D<T> &rhs) { return !(lhs == rhs); }
 
   constexpr std::ostream &Print(std::ostream &os) const;
 };
 
 /**
  * Matrix data, with a non-dynamic size (e.g., known at compile-time).
- * @tparam T The type of the entries of the matrix
+ * @tparam Type The type of the entries of the matrix
  * @tparam Rows Number of rows
  * @tparam Cols Number of columns
  * @note Stored as flattened std::array
  */
-template <class T, std::size_t Rows, std::size_t Cols>
+template <class Type, std::size_t Rows, std::size_t Cols>
 struct MatrixDataType {
-  std::array<T, Rows * Cols> entries;
+  std::array<Type, Rows * Cols> entries;
 
-  constexpr explicit(false) MatrixDataType(const std::array<T, Rows * Cols> &entries) :
+  constexpr explicit(false) MatrixDataType(const std::array<Type, Rows * Cols> &entries) :
       entries{entries} {}
 
   constexpr virtual ~MatrixDataType() = default;
-  [[nodiscard]] virtual constexpr T *Data() noexcept { return entries.data(); }
-  [[nodiscard]] virtual constexpr const T *Data() const noexcept { return entries.data(); }
+  [[nodiscard]] virtual constexpr Type *Data() noexcept { return entries.data(); }
+  [[nodiscard]] virtual constexpr const Type *Data() const noexcept { return entries.data(); }
 
   constexpr MatrixDataType(const MatrixDataType &other) : entries(other.entries) {}
   constexpr MatrixDataType(MatrixDataType &&other) noexcept : entries(std::move(other.entries)) {}
@@ -109,12 +129,12 @@ struct MatrixDataType {
 
 /**
  * Matrix data, with a dynamic size (e.g., not known at compile-time)
- * @tparam T The type of the entries of the matrix
+ * @tparam Type The type of the entries of the matrix
  * @note Stores a pointer, and the data is allocated on the heap. This class manages its own memory.
  */
-template <class T>
-struct MatrixDataType<T, matrix::kDynamicSize, matrix::kDynamicSize> {
-  std::vector<T> entries; // FIXME: Concerning pointer invalidation?
+template <class Type>
+struct MatrixDataType<Type, matrix::kDynamicSize, matrix::kDynamicSize> {
+  std::vector<Type> entries; // FIXME: Concerning pointer invalidation?
   std::size_t num_rows;
   std::size_t num_cols;
 
@@ -122,8 +142,8 @@ struct MatrixDataType<T, matrix::kDynamicSize, matrix::kDynamicSize> {
       entries(rows * cols), num_rows{rows}, num_cols{cols} {}
 
   constexpr virtual ~MatrixDataType() = default;
-  [[nodiscard]] virtual constexpr T *Data() noexcept { return entries.data(); }
-  [[nodiscard]] virtual constexpr const T *Data() const noexcept { return entries.data(); }
+  [[nodiscard]] virtual constexpr Type *Data() noexcept { return entries.data(); }
+  [[nodiscard]] virtual constexpr const Type *Data() const noexcept { return entries.data(); }
 
   constexpr MatrixDataType(const MatrixDataType &other) :
       entries(other.entries), num_rows{other.num_rows}, num_cols{other.num_cols} {}
@@ -250,7 +270,7 @@ public:
     requires(kIsDynamic)
       : DataHolderType{num_rows, num_cols} {}
 
-  constexpr explicit(false) Matrix2D(const std::array<std::array<Type, Cols>, Rows> &entries)
+  constexpr explicit(false) Matrix2D(const std::array<std::array<Type, Cols>, Rows> &entries = {})
     requires(!kIsDynamic)
       : DataHolderType{matrix::Flatten2D(entries)} {}
 
@@ -293,22 +313,12 @@ public:
   [[nodiscard]] constexpr RowConst_T operator[](const std::size_t row) const { return At(row); }
 
   template <typename T, std::size_t R, std::size_t C>
-  friend constexpr bool operator==(const Matrix2D &lhs, const Matrix2D<T, R, C> &rhs) {
-    if (lhs.NumRows() != rhs.NumRows() || lhs.NumCols() != rhs.NumCols()) {
-      return false;
-    }
-
-    for (std::size_t r = 0; r < lhs.NumRows(); ++r) {
-      for (std::size_t c = 0; c < lhs.NumCols(); ++c) {
-        if (!(lhs.At(r, c) == rhs.At(r, c))) return false;
-      }
-    }
-
-    return true;
+  friend bool operator==(const Matrix2D &lhs, const Matrix2D<T, R, C> &rhs) {
+    return static_cast<const IMatrix2D<Type> &>(lhs) == static_cast<const IMatrix2D<T> &>(rhs);
   }
 
   template <typename T, std::size_t R, std::size_t C>
-  friend constexpr bool operator!=(const Matrix2D &lhs, const Matrix2D<T, R, C> &rhs) { return !(lhs == rhs); }
+  friend bool operator!=(const Matrix2D &lhs, const Matrix2D<T, R, C> &rhs) { return !(lhs == rhs); }
 
   Matrix2D<Type> WithNewSize(const std::size_t new_rows, const std::size_t new_cols) {
     if (new_cols == NumCols() && new_rows == NumRows()) {

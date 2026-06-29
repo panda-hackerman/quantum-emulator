@@ -74,7 +74,7 @@ void EditorWindowManager::DrawWindows() {
       ImGui::DockBuilderSplitNode(dock_id_left, ImGuiDir_Up, 0.50f, &dock_id_left_top,
                                   &dock_id_left_bottom);
       ImGui::DockBuilderDockWindow("Circuit Diagram", dock_id_main);
-      // ImGui::DockBuilderDockWindow("Properties", dock_id_left_top);
+      // ImGui::DockBuilderDockWindow("Properties", dock_id_left_top); //TODO: Figure out layout
       ImGui::DockBuilderDockWindow("Circuits", dock_id_left_bottom);
       ImGui::DockBuilderFinish(dock_space_id);
     }
@@ -100,6 +100,8 @@ void EditorWindowManager::DrawWindows() {
 
     ImGui::End();
   }
+
+  ImGui::ShowDemoWindow();
 }
 
 void EditorWindowManager::ResetWindows() {
@@ -116,30 +118,7 @@ void EditorWindowManager::ResetWindows() {
 
   windows_.emplace_back(EditorWindow{
       .name = "Circuits",
-      .on_draw = [] {
-            constexpr std::size_t kNumElems = gates::kIdToGateMap.Size();
-            constexpr ImVec2 kButtonSize{60, 60};
-
-            const ImGuiStyle &style = ImGui::GetStyle();
-            const float window_visible_x2 = ImGui::GetCursorScreenPos().x + ImGui::GetContentRegionAvail().x;
-
-            int i = 0;
-            for (const auto &[id, part] : gates::kIdToGateMap) {
-              ImGui::PushID(id);
-
-              const char *name = part.name == nullptr ? "" : part.name;
-              ImGui::Button(name, kButtonSize);
-
-              const float last_button_x2 = ImGui::GetItemRectMax().x;
-              const float next_button_x2 = last_button_x2 + style.ItemSpacing.x + kButtonSize.x;
-
-              if (++i < kNumElems && next_button_x2 < window_visible_x2) {
-                ImGui::SameLine();
-              }
-
-              ImGui::PopID();
-            }
-          },
+      .on_draw = [&] { circuit_palette_.Draw(); },
       .can_close = false,
   });
 }

@@ -5,109 +5,136 @@
 #ifndef CIRCUIT_H
 #define CIRCUIT_H
 #include <cstdint>
+#include <format>
+#include <utility>
 
-#include "collections/compile_time_map.h"
+#include "collections/sparse_set.h"
 #include "gate_matrices.h"
-
-struct CircuitPart {
-  const char *name;
-  const matrix::GateMatrix<1> *gate;
-};
-
-namespace gates {
-
-// TODO: Test performance for a reasonable maximums for qubits & depth
-
-inline constexpr std::size_t kMinCircuitQubits = 1;
-inline constexpr std::size_t kMaxCircuitQubits = 16;
-inline constexpr std::size_t kMinCircuitDepth = 1;
-inline constexpr std::size_t kMaxCircuitDepth = 16;
-
-enum GateID : std::uint16_t {
-  kNullGate,
-  kControlBit,
-  kIdentityGate,
-  kPauliXGate,
-  kPauliYGate,
-  kPauliZGate,
-  kHadamardGate,
-  kTGate,
-};
-
-// Ensure enough ids if every gate is unique (2^n >= qubits * layers) incl. reserved for empty
-static_assert(1 << (sizeof(GateID) * 8) > kMaxCircuitQubits * kMaxCircuitDepth);
-
-inline constexpr auto kIdToGateMap = CTMapBuilder<GateID, CircuitPart>({
-    {kNullGate, {nullptr, nullptr}},
-    {kControlBit, {"*", nullptr}},
-    {kIdentityGate, {"Identity", &matrix::kIdentity}},
-    {kPauliXGate, {"PauliX", &matrix::kPauliX}},
-    {kPauliYGate, {"kPauliY", &matrix::kPauliY}},
-    {kPauliZGate, {"PauliZ", &matrix::kPauliZ}},
-    {kHadamardGate, {"Hadamard", &matrix::kHadamard}},
-    {kTGate, {"T", &matrix::kPi8ths}},
-});
-
-} // namespace gates
 
 class Circuit {
 public:
-  using GateID = gates::GateID;
-  using GridSize_T = std::uint8_t;
+  /// Unsigned integer type guaranteed to store up to at least the max qubit and layer size.
+  using GridSize_T = std::uint_least8_t;
+  /// Integer type guaranteed to have at least 1 unique value for each possible qubit & layer index.
+  using GridIndex_T = std::uint_least16_t;
 
-  static_assert(std::numeric_limits<GridSize_T>::min() <= gates::kMinCircuitQubits);
-  static_assert(std::numeric_limits<GridSize_T>::max() >= gates::kMaxCircuitQubits);
-  static_assert(std::numeric_limits<GridSize_T>::min() <= gates::kMinCircuitDepth);
-  static_assert(std::numeric_limits<GridSize_T>::max() >= gates::kMaxCircuitDepth);
+  /// Pointer to generic complex matrix
+  using Matrix_T = IMatrix2D<std::complex<float>>;
 
-  // static constexpr PartID kEmptyId = 0; ///< Represents "nothing" in a circuit
+  /// A single circuit part.
+  enum class Part : std::uint8_t {
+    kEmpty = 0,
+    kMatrix2x2,
+    kControlBit,
+    kAntiControlBit,
+    kMeasure,
+    kSwap,
+  };
 
-private:
-  GridSize_T num_qubits_;
-  GridSize_T num_layers_;
+  // TODO: Test performance for a reasonable maximums for qubits & depth
+  static constexpr GridSize_T kMinQubits = 1; ///< Minimum allowed qubits in a circuit
+  static constexpr GridSize_T kMaxQubits = 16; ///< Maximum allowed qubits in a circuit
+  static constexpr GridSize_T kMinDepth = 1; ///< Minimum allowed layers (aka circuit depth)
+  static constexpr GridSize_T kMaxDepth = 16; ///< Maximum allowed layers (aka circuit depth)
 
-  // SparseSet<PartID, CircuitPart> gates_;
-  Matrix2D<GateID> part_id_grid_;
+  static_assert(std::cmp_less_equal(std::numeric_limits<GridSize_T>::lowest(), kMinQubits));
+  static_assert(std::cmp_less_equal(std::numeric_limits<GridSize_T>::lowest(), kMinDepth));
+  static_assert(std::cmp_greater_equal(std::numeric_limits<GridSize_T>::max(), kMaxQubits));
+  static_assert(std::cmp_greater_equal(std::numeric_limits<GridSize_T>::max(), kMaxDepth));
 
-public:
-  Circuit(const GridSize_T num_qubits, const GridSize_T num_layers) :
-      num_qubits_{num_qubits}, num_layers_{num_layers}, part_id_grid_{num_qubits, num_layers} {}
+  static_assert(std::cmp_greater(tmp::max_unique_v<GridIndex_T>, (kMaxQubits * kMaxDepth)));
 
-  [[nodiscard]] constexpr GridSize_T NumQubits() const noexcept { return num_qubits_; }
-  [[nodiscard]] constexpr GridSize_T CircuitDepth() const noexcept { return num_layers_; }
+protected:
+  GridSize_T num_qubits_ = kMinQubits;
+  GridSize_T num_layers_ = kMinDepth;
 
-  void SetNumQubits(GridSize_T new_num_qubits);
-  void SetNumLayers(GridSize_T new_num_layers);
-  void SetNewSize(GridSize_T new_num_qubits, std::uint8_t new_num_layers);
+  Part parts_array_[kMaxQubits][kMaxDepth] = {};
+  SparseSet<GridIndex_T, const Matrix_T *> id_to_matrix_;
 
-  [[nodiscard]] bool IsInBounds(GridSize_T qubit, GridSize_T layer) const;
-  [[nodiscard]] GateID GetIdAt(GridSize_T qubit, GridSize_T layer);
-  [[nodiscard]] const CircuitPart &GetCircuitPart(GridSize_T qubit, GridSize_T layer);
-
-  void SetCircuitPart(GridSize_T qubit, GridSize_T layer, GateID id);
+  /// Convert coordinates to flat index (without bounds checking)
+  [[nodiscard]]
+  static constexpr GridIndex_T IndexOf(const GridSize_T qubit, const GridSize_T layer) noexcept {
+    /* This is flipped from the typical circuit diagram representation. Here, we use the qubits as
+     * the columns, so that the layers are contiguous. */
+    return qubit + (kMaxQubits * layer);
+  }
 
   /**
-   * @return An example circuit.
-   *
-   * Builds a simple example circuit.
+   * Check if the qubit and layer are within the minimum and maximum allowed values. Otherwise,
+   * throws an exception.
+   * @throw std::out_of_range If either parameter is not within the allowed range.
+   * @see Circuit::kMinQubits, Circuit::kMaxQubits, Circuit::kMinDepth, Circuit::kMaxQubits
+   */
+  static constexpr void AssertInLimit(const GridSize_T qubit, const GridSize_T layer) {
+    if (qubit < kMinQubits || qubit > kMaxQubits || layer < kMinQubits || layer > kMaxQubits) {
+      throw std::out_of_range(std::format(
+          "Qubit {} and/or Layer {} must be within the ranges ({} to {}) and ({} to {}), respectively",
+          qubit, layer, kMinQubits, kMaxQubits, kMinDepth, kMaxDepth));
+    }
+  }
+
+  /**
+   * Check that the qubit and layer inside the bounds of the current size of the circuit. Otherwise,
+   * throws an exception.
+   * @throws std::out_of_range If either parameter is out of bounds.
+   */
+  constexpr void AssertInRange(const GridSize_T qubit, const GridSize_T layer) const {
+    if (qubit >= num_qubits_ || layer >= num_layers_) {
+      throw std::out_of_range(std::format("Qubit {}, Layer {}, is out of range for size ({}, {})!",
+                                          qubit, layer, num_qubits_, num_layers_));
+    }
+  }
+
+public:
+  Circuit(const GridSize_T qubits, const GridSize_T layers) :
+      num_qubits_{qubits}, num_layers_{layers} {}
+
+  void AddEmpty(GridSize_T qubit, GridSize_T layer);
+  void AddGate(GridSize_T qubit, GridSize_T layer, const Matrix_T *matrix);
+  void AddControlBit(GridSize_T qubit, GridSize_T layer);
+  void AddAntiControlBit(GridSize_T qubit, GridSize_T layer);
+  void AddMeasurement(GridSize_T qubit, GridSize_T layer);
+  void AddSwap(GridSize_T qubit, GridSize_T layer);
+
+  void SetNumQubits(GridSize_T num_qubits);
+  void SetNumLayers(GridSize_T num_layers);
+  void SetSize(GridSize_T num_qubits, GridSize_T num_layers);
+
+  [[nodiscard]] GridSize_T GetNumQubits() const noexcept { return num_qubits_; }
+  [[nodiscard]] GridSize_T GetNumLayers() const noexcept { return num_layers_; }
+
+  [[nodiscard]] Part GetPartTypeAt(GridSize_T qubit, GridSize_T layer) const;
+  [[nodiscard]] const Matrix_T *GetMatrixAt(GridSize_T qubit, GridSize_T layer) const;
+
+  /// Get the part at the given index without bounds checking
+  [[nodiscard]] Part GetPartTypeUnsafe(GridSize_T qubit, GridSize_T layer) const;
+
+  /// Get the gate at the given index without bounds checking
+  [[nodiscard]] const Matrix_T *GetMatrixUnsafe(GridSize_T qubit, GridSize_T layer) const;
+
+  /**
+   * Builds a simple example circuit, which looks like:
    * @code
    * q0 |0> ---X-Z---
    * q1 |0> -H-*---*-
    * q2 |0> -X-----X-
+   * @endcode
+   *
+   * @return A new circuit
    */
   static Circuit BuildExampleCircuit() {
     Circuit circuit{3, 4};
 
-    circuit.SetCircuitPart(1, 0, gates::kHadamardGate);
-    circuit.SetCircuitPart(2, 0, gates::kPauliXGate);
+    circuit.AddGate(1, 0, &matrix::kHadamard);
+    circuit.AddGate(2, 0, &matrix::kPauliX);
 
-    circuit.SetCircuitPart(0, 1, gates::kPauliXGate);
-    circuit.SetCircuitPart(1, 1, gates::kControlBit);
+    circuit.AddGate(0, 1, &matrix::kPauliX);
+    circuit.AddControlBit(1, 1);
 
-    circuit.SetCircuitPart(0, 2, gates::kPauliZGate);
+    circuit.AddGate(0, 2, &matrix::kPauliZ);
 
-    circuit.SetCircuitPart(1, 3, gates::kControlBit);
-    circuit.SetCircuitPart(2, 3, gates::kPauliXGate);
+    circuit.AddControlBit(1, 3);
+    circuit.AddGate(2, 3, &matrix::kPauliX);
 
     return circuit;
   }

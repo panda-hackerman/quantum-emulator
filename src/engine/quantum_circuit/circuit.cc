@@ -4,64 +4,76 @@
 
 #include "circuit.h"
 
-#include <format>
-
-void Circuit::SetNumQubits(const GridSize_T new_num_qubits) {
-  SetNewSize(new_num_qubits, num_layers_);
+void Circuit::AddEmpty(const GridSize_T qubit, const GridSize_T layer) {
+  id_to_matrix_.Remove(IndexOf(qubit, layer));
+  parts_array_[qubit][layer] = Part::kEmpty;
 }
 
-void Circuit::SetNumLayers(const GridSize_T new_num_layers) {
-  SetNewSize(num_qubits_, new_num_layers);
+void Circuit::AddGate(const GridSize_T qubit, const GridSize_T layer, const Matrix_T *matrix) {
+  if (matrix->NumCols() != 2 || matrix->NumRows() != 2) {
+    throw std::invalid_argument("A single qubit gate must be a 2x2 matrix!");
+  }
+
+  id_to_matrix_.Insert(IndexOf(qubit, layer), matrix);
+  parts_array_[qubit][layer] = Part::kMatrix2x2;
 }
 
-void Circuit::SetNewSize(const GridSize_T new_num_qubits, const GridSize_T new_num_layers) {
-  if (new_num_qubits < gates::kMinCircuitQubits || new_num_qubits > gates::kMaxCircuitQubits) {
-    throw std::invalid_argument("Number of qubits is not within valid range!");
-  }
-
-  if (new_num_layers < gates::kMinCircuitDepth || new_num_layers > gates::kMaxCircuitDepth) {
-    throw std::invalid_argument("Number of layers is not within valid range!");
-  }
-
-  part_id_grid_ = part_id_grid_.WithNewSize(new_num_qubits, new_num_layers);
-  num_qubits_ = new_num_qubits;
-  num_layers_ = new_num_layers;
+void Circuit::AddControlBit(const GridSize_T qubit, const GridSize_T layer) {
+  id_to_matrix_.Remove(IndexOf(qubit, layer));
+  parts_array_[qubit][layer] = Part::kControlBit;
 }
 
-void Circuit::SetCircuitPart(const GridSize_T qubit, const GridSize_T layer,
-                                       const GateID id) {
-  if (!gates::kIdToGateMap.Contains(id)) {
-    throw std::invalid_argument("Trying to assign a part, but a part with that ID doesn't exist!");
-  }
-
-  if (!IsInBounds(qubit, layer)) {
-    throw std::out_of_range("Tried to set circuit part that is out of range!");
-  }
-
-  part_id_grid_.At(qubit, layer) = id;
+void Circuit::AddAntiControlBit(const GridSize_T qubit, const GridSize_T layer) {
+  id_to_matrix_.Remove(IndexOf(qubit, layer));
+  parts_array_[qubit][layer] = Part::kAntiControlBit;
 }
 
-bool Circuit::IsInBounds(const GridSize_T qubit, const GridSize_T layer) const {
-  if (qubit < 0 || qubit >= num_qubits_ || layer < 0 || layer >= num_layers_) {
-    return false;
-  }
-
-  return true;
+void Circuit::AddMeasurement(const GridSize_T qubit, const GridSize_T layer) {
+  id_to_matrix_.Remove(IndexOf(qubit, layer));
+  parts_array_[qubit][layer] = Part::kEmpty;
 }
 
-Circuit::GateID Circuit::GetIdAt(const GridSize_T qubit, const GridSize_T layer) {
-  if (!IsInBounds(qubit, layer)) {
-    throw std::out_of_range("Tried to access circuit gate that's out of range!");
-  }
-
-  return part_id_grid_.At(qubit, layer);
+void Circuit::AddSwap(const GridSize_T qubit, const GridSize_T layer) {
+  // TODO: Check if swap is valid?
+  id_to_matrix_.Remove(IndexOf(qubit, layer));
+  parts_array_[qubit][layer] = Part::kSwap;
 }
 
-const CircuitPart &Circuit::GetCircuitPart(const GridSize_T qubit, const GridSize_T layer) {
-  if (!IsInBounds(qubit, layer)) {
-    throw std::out_of_range("Tried to access circuit gate that's out of range!");
+void Circuit::SetNumQubits(const GridSize_T num_qubits) {
+  AssertInLimit(num_qubits, num_layers_);
+  num_qubits_ = num_qubits;
+}
+
+void Circuit::SetNumLayers(GridSize_T num_layers) {
+  AssertInLimit(num_qubits_, num_layers);
+  num_layers_ = num_layers;
+}
+
+void Circuit::SetSize(const GridSize_T num_qubits, const GridSize_T num_layers) {
+  AssertInLimit(num_qubits, num_layers);
+  num_qubits_ = num_qubits;
+  num_layers_ = num_layers;
+}
+
+Circuit::Part Circuit::GetPartTypeAt(const GridSize_T qubit, const GridSize_T layer) const {
+  AssertInLimit(qubit, layer);
+  return GetPartTypeUnsafe(qubit, layer);
+}
+
+const Circuit::Matrix_T *Circuit::GetMatrixAt(const GridSize_T qubit, const GridSize_T layer) const {
+  AssertInLimit(qubit, layer);
+  return GetMatrixUnsafe(qubit, layer);
+}
+
+Circuit::Part Circuit::GetPartTypeUnsafe(const GridSize_T qubit, const GridSize_T layer) const {
+  return parts_array_[qubit][layer];
+}
+
+const Circuit::Matrix_T *Circuit::GetMatrixUnsafe(const GridSize_T qubit,
+                                                const GridSize_T layer) const {
+  if (id_to_matrix_.Contains(IndexOf(qubit, layer))) {
+    return id_to_matrix_.Get(IndexOf(qubit, layer));
   }
 
-  const GateID id = part_id_grid_.At(qubit, layer);
-  return gates::kIdToGateMap.Get(id);
+  return nullptr;
 }

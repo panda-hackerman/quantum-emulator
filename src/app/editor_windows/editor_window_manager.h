@@ -21,15 +21,13 @@ struct EditorWindow {
 
 class EditorWindowManager {
 private:
-  bool is_initialized_ = false;
   std::vector<EditorWindow> windows_;
 
   Circuit circuit_ = Circuit::BuildExampleCircuit();
-  CircuitEditorWindow circuit_window_{.circuit = &circuit_,
-                                      .data = {
-                                          .num_qubits = circuit_.NumQubits(),
-                                          .num_layers = circuit_.CircuitDepth(),
-                                      }};
+  CircuitEditor circuit_window_{&circuit_};
+
+  CircuitPalette circuit_palette_{};
+  bool is_initialized_ = false;
 
 public:
 #ifndef __ESCRIPTEN__

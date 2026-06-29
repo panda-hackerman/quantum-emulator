@@ -20,6 +20,13 @@ inline constexpr bool is_instance_of_v = std::false_type{};
 template <template <class...> class U, class... Vs>
 inline constexpr bool is_instance_of_v<U<Vs...>, U> = std::true_type{};
 
+/**
+ * The theoretical maximum number of unique values this type can store (assuming all possible bit
+ * strings results in a valid T). Equivalent to 2^N, where N is the size of T in bits.
+ */
+template <typename T>
+inline constexpr std::size_t max_unique_v = 1 << (8 * sizeof(T));
+
 /// The type returned from adding L + R
 template <typename L, typename R>
 using addition_result = std::invoke_result<decltype([](L lhs, R rhs) { return lhs + rhs; }), L, R>;

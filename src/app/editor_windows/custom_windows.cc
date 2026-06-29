@@ -6,7 +6,7 @@
 
 #include "imgui.h"
 
-void CircuitEditorWindow::Draw() {
+void CircuitEditor::Draw() {
   ImGui::PushItemWidth(80);
   ImGui::InputInt("Qubits", &data.num_qubits);
   ImGui::SameLine();
@@ -48,15 +48,40 @@ void CircuitEditorWindow::Draw() {
         ImGui::PushID(layer);
         ImGui::TableSetColumnIndex(layer + 1);
 
-        const int button_id = layer + (data.num_layers * qubit);
-        const CircuitPart &part = circuit->GetCircuitPart(static_cast<Circuit::GridSize_T>(qubit),
-                                                          static_cast<Circuit::GridSize_T>(layer));
+        const GateButton *gate_button = buttons_arr[qubit][layer];
+        ImGui::Button(gate_button->name, ImVec2{60, 60});
 
-        const char *name = part.name == nullptr ? "" : part.name;
-        const std::string label = std::format("{}##{}", name, button_id);
-        ImGui::Button(label.data(), ImVec2{60, 60});
+        // DRAG AND DROP / SOURCE
+        if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)) {
+          GateSwapPayload payload = {static_cast<Circuit::GridSize_T>(qubit),
+                                     static_cast<Circuit::GridSize_T>(layer)};
+
+          ImGui::SetDragDropPayload("BUTTON_SWAP", &payload, sizeof(payload));
+          ImGui::Text("%s", "Move gate");
+          ImGui::EndDragDropSource();
+        }
+
+        // DRAG AND DROP / TARGET
+        if (ImGui::BeginDragDropTarget()) {
+          if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("BUTTON_SWAP")) {
+            auto [payload_qubit, payload_layer] = *static_cast<GateSwapPayload *>(payload->Data);
+
+            Set(qubit, layer, buttons_arr[payload_qubit][payload_layer]);
+            Set(payload_qubit, payload_layer, gate_button);
+          }
+
+          if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("BUTTON_SET")) {
+            const GateButton *payload_button = *static_cast<const GateButton **>(payload->Data);
+
+            Set(qubit, layer, payload_button);
+          }
+
+          ImGui::EndDragDropTarget();
+        }
+
         ImGui::PopID();
       }
+
       ImGui::PopID();
     }
 
@@ -64,16 +89,105 @@ void CircuitEditorWindow::Draw() {
   }
 }
 
-void CircuitEditorWindow::UpdateCircuitSize() {
+void CircuitEditor::UpdateCircuitSize() {
   int &qubits = data.num_qubits;
   int &layers = data.num_layers;
 
-  qubits = std::clamp<int>(qubits, gates::kMinCircuitQubits, gates::kMaxCircuitQubits);
-  layers = std::clamp<int>(layers, gates::kMinCircuitDepth, gates::kMaxCircuitDepth);
+  qubits = std::clamp<int>(qubits, Circuit::kMinQubits, Circuit::kMaxQubits);
+  layers = std::clamp<int>(layers, Circuit::kMinDepth, Circuit::kMaxDepth);
 
-  if (std::cmp_not_equal(qubits, circuit->NumQubits()) ||
-      std::cmp_not_equal(layers, circuit->CircuitDepth())) {
-    circuit->SetNewSize(static_cast<Circuit::GridSize_T>(qubits),
-                        static_cast<Circuit::GridSize_T>(layers));
+  if (std::cmp_not_equal(qubits, circuit->GetNumQubits()) ||
+      std::cmp_not_equal(layers, circuit->GetNumLayers())) {
+    circuit->SetSize(static_cast<Circuit::GridSize_T>(qubits),
+                     static_cast<Circuit::GridSize_T>(layers));
+  }
+}
+
+void CircuitEditor::Set(const Circuit::GridSize_T qubit, const Circuit::GridSize_T layer,
+                        const GateButton *button) {
+  if (circuit == nullptr) return;
+
+  switch (button->part_type) {
+    case Circuit::Part::kEmpty:
+      circuit->AddEmpty(qubit, layer);
+      break;
+    case Circuit::Part::kMatrix2x2:
+      circuit->AddGate(qubit, layer, button->matrix);
+      break;
+    case Circuit::Part::kControlBit:
+      circuit->AddControlBit(qubit, layer);
+      break;
+    case Circuit::Part::kAntiControlBit:
+      circuit->AddAntiControlBit(qubit, layer);
+      break;
+    case Circuit::Part::kMeasure:
+      circuit->AddMeasurement(qubit, layer);
+      break;
+    case Circuit::Part::kSwap:
+      circuit->AddSwap(qubit, layer);
+      break;
+    default:
+      std::cerr << "Unimplemented part type!" << std::endl;
+      return;
+  }
+
+  buttons_arr[qubit][layer] = button;
+}
+
+void CircuitEditor::ReadFromCircuit() {
+  /* This is really horrible and error-prone, I shouldn't really have to do this.... but alas... */
+  // TODO: Do something different that doesn't involve this...
+  for (int qubit = 0; qubit < Circuit::kMaxQubits; ++qubit) {
+    for (int layer = 0; layer < Circuit::kMaxDepth; ++layer) {
+      const Circuit::Part part_type = circuit->GetPartTypeUnsafe(qubit, layer);
+      const Circuit::Matrix_T *matrix = circuit->GetMatrixUnsafe(qubit, layer);
+
+      bool set = false;
+      for (const GateButton *button : gate::kKnownGates) {
+        if (part_type == button->part_type && button->MatrixMatches(matrix)) {
+          buttons_arr[qubit][layer] = button;
+          set = true;
+          break;
+        }
       }
+
+      if (!set) {
+        std::cerr << "Unknown part!" << std::endl;
+
+        if (matrix) {
+          matrix->Print(std::cerr) << std::endl;
+        }
+      }
+    }
+  }
+}
+
+void CircuitPalette::Draw() {
+
+  const ImGuiStyle &style = ImGui::GetStyle();
+  const float window_visible_x2 = ImGui::GetCursorScreenPos().x + ImGui::GetContentRegionAvail().x;
+
+  constexpr std::size_t num_gates = gate::kKnownGates.size();
+  for (int i = 0; i < num_gates; ++i) {
+    ImGui::PushID(i);
+
+    const GateButton *elem = gate::kKnownGates[i];
+    ImGui::Button(elem->name, button_size);
+
+    const float last_button_x2 = ImGui::GetItemRectMax().x;
+    const float next_button_x2 = last_button_x2 + style.ItemSpacing.x + button_size.x;
+
+    if ((i < num_gates - 1) && next_button_x2 < window_visible_x2) {
+      ImGui::SameLine();
+    }
+
+    // DRAG AND DROP SOURCE
+    if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)) {
+      ImGui::SetDragDropPayload("BUTTON_SET", &elem, sizeof(elem));
+      ImGui::Text("%s", "Set gate");
+      ImGui::EndDragDropSource();
+    }
+
+    ImGui::PopID();
+  }
 }
