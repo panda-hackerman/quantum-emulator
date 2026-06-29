@@ -6,7 +6,7 @@
 
 void Circuit::AddEmpty(const GridSize_T qubit, const GridSize_T layer) {
   id_to_matrix_.Remove(IndexOf(qubit, layer));
-  parts_array_[qubit][layer] = Part::kEmpty;
+  parts_array_[IndexOf(qubit, layer)] = Part::kEmpty;
 }
 
 void Circuit::AddGate(const GridSize_T qubit, const GridSize_T layer, const Matrix_T *matrix) {
@@ -15,28 +15,28 @@ void Circuit::AddGate(const GridSize_T qubit, const GridSize_T layer, const Matr
   }
 
   id_to_matrix_.Insert(IndexOf(qubit, layer), matrix);
-  parts_array_[qubit][layer] = Part::kMatrix2x2;
+  parts_array_[IndexOf(qubit, layer)] = Part::kMatrix2x2;
 }
 
 void Circuit::AddControlBit(const GridSize_T qubit, const GridSize_T layer) {
   id_to_matrix_.Remove(IndexOf(qubit, layer));
-  parts_array_[qubit][layer] = Part::kControlBit;
+  parts_array_[IndexOf(qubit, layer)] = Part::kControlBit;
 }
 
 void Circuit::AddAntiControlBit(const GridSize_T qubit, const GridSize_T layer) {
   id_to_matrix_.Remove(IndexOf(qubit, layer));
-  parts_array_[qubit][layer] = Part::kAntiControlBit;
+  parts_array_[IndexOf(qubit, layer)] = Part::kAntiControlBit;
 }
 
 void Circuit::AddMeasurement(const GridSize_T qubit, const GridSize_T layer) {
   id_to_matrix_.Remove(IndexOf(qubit, layer));
-  parts_array_[qubit][layer] = Part::kEmpty;
+  parts_array_[IndexOf(qubit, layer)] = Part::kEmpty;
 }
 
 void Circuit::AddSwap(const GridSize_T qubit, const GridSize_T layer) {
   // TODO: Check if swap is valid?
   id_to_matrix_.Remove(IndexOf(qubit, layer));
-  parts_array_[qubit][layer] = Part::kSwap;
+  parts_array_[IndexOf(qubit, layer)] = Part::kSwap;
 }
 
 void Circuit::SetNumQubits(const GridSize_T num_qubits) {
@@ -66,7 +66,7 @@ const Circuit::Matrix_T *Circuit::GetMatrixAt(const GridSize_T qubit, const Grid
 }
 
 Circuit::Part Circuit::GetPartTypeUnsafe(const GridSize_T qubit, const GridSize_T layer) const {
-  return parts_array_[qubit][layer];
+  return parts_array_[IndexOf(qubit, layer)];
 }
 
 const Circuit::Matrix_T *Circuit::GetMatrixUnsafe(const GridSize_T qubit,

@@ -28,6 +28,12 @@ static std::string ExceptionWhat(const std::exception_ptr &e = std::current_exce
 
 int main() {
   try {
+    // constexpr Matrix2D<std::complex<float>, 1, 1> single = {{{{1}}}};
+    // constexpr auto my_matrix = single.Tensor(matrix::kPauliX);
+    // // constexpr auto my_matrix = matrix::kIdentity.Tensor(matrix::kPauliX);
+
+    // my_matrix.Print(std::cout) << std::endl;
+
     Application &app = Application::Instance();
 
     if (!app.Init()) {

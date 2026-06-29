@@ -5,12 +5,14 @@
 #include "custom_windows.h"
 
 #include "imgui.h"
+#include "math/simulator.h"
 
 void CircuitEditor::Draw() {
   ImGui::PushItemWidth(80);
   ImGui::InputInt("Qubits", &data.num_qubits);
   ImGui::SameLine();
   ImGui::InputInt("Layers", &data.num_layers);
+  ImGui::PopItemWidth();
 
   // Update Size
   UpdateCircuitSize();
@@ -100,6 +102,8 @@ void CircuitEditor::UpdateCircuitSize() {
       std::cmp_not_equal(layers, circuit->GetNumLayers())) {
     circuit->SetSize(static_cast<Circuit::GridSize_T>(qubits),
                      static_cast<Circuit::GridSize_T>(layers));
+
+    *circuit_dirty_ = true;
   }
 }
 
@@ -132,6 +136,7 @@ void CircuitEditor::Set(const Circuit::GridSize_T qubit, const Circuit::GridSize
   }
 
   buttons_arr[qubit][layer] = button;
+  *circuit_dirty_ = true;
 }
 
 void CircuitEditor::ReadFromCircuit() {
@@ -163,7 +168,6 @@ void CircuitEditor::ReadFromCircuit() {
 }
 
 void CircuitPalette::Draw() {
-
   const ImGuiStyle &style = ImGui::GetStyle();
   const float window_visible_x2 = ImGui::GetCursorScreenPos().x + ImGui::GetContentRegionAvail().x;
 
@@ -190,4 +194,33 @@ void CircuitPalette::Draw() {
 
     ImGui::PopID();
   }
+}
+
+void CircuitInfoPanel::Draw() {
+  ImGui::Text("Circuit Info:");
+
+  if (*circuit_dirty_ == true || info_str_.empty()) {
+    RecomputeInfo();
+  }
+
+  ImGui::Text("%s", info_str_.data());
+}
+
+void CircuitInfoPanel::RecomputeInfo() {
+
+  const auto parts = circuit_->GetPartsInLayer(0);
+  const auto matrices = circuit_->GetMatricesInLayer(0);
+
+  const Matrix2D<std::complex<float>> data = ComputeLayer(parts, matrices);
+
+  std::ostringstream oss;
+
+  data.Print(oss);
+
+  info_str_ = oss.str();
+
+  // std::cout << "Updated layer:" << std::endl;
+  // std::cout << info_str_ << std::endl;
+
+  *circuit_dirty_ = false;
 }

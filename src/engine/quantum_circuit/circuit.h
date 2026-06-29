@@ -19,7 +19,7 @@ public:
   using GridIndex_T = std::uint_least16_t;
 
   /// Pointer to generic complex matrix
-  using Matrix_T = IMatrix2D<std::complex<float>>;
+  using Matrix_T = Matrix2D<std::complex<float>, 2, 2>;
 
   /// A single circuit part.
   enum class Part : std::uint8_t {
@@ -48,7 +48,7 @@ protected:
   GridSize_T num_qubits_ = kMinQubits;
   GridSize_T num_layers_ = kMinDepth;
 
-  Part parts_array_[kMaxQubits][kMaxDepth] = {};
+  std::array<Part, kMaxDepth * kMaxQubits> parts_array_;
   SparseSet<GridIndex_T, const Matrix_T *> id_to_matrix_;
 
   /// Convert coordinates to flat index (without bounds checking)
@@ -111,6 +111,30 @@ public:
 
   /// Get the gate at the given index without bounds checking
   [[nodiscard]] const Matrix_T *GetMatrixUnsafe(GridSize_T qubit, GridSize_T layer) const;
+
+  [[nodiscard]] std::vector<Part> GetPartsInLayer(const GridSize_T layer) const {
+    AssertInRange(0, layer);
+
+    const auto arr_begin = parts_array_.begin();
+    const auto first = arr_begin + IndexOf(0, layer);
+    const auto last = arr_begin + IndexOf(num_qubits_, layer);
+
+    return std::vector(first, last);
+  }
+
+  [[nodiscard]] std::vector<const Matrix_T *> GetMatricesInLayer(const GridSize_T layer) const {
+    AssertInRange(0, layer);
+
+    std::vector<const Matrix_T *> out(num_qubits_, nullptr);
+
+    for (GridSize_T qubit = 0; qubit < num_qubits_; ++qubit) {
+      if (parts_array_[IndexOf(qubit, layer)] == Part::kMatrix2x2) {
+        out[qubit] = id_to_matrix_.Get(IndexOf(qubit, layer));
+      }
+    }
+
+    return out;
+  }
 
   /**
    * Builds a simple example circuit, which looks like:

@@ -90,7 +90,9 @@ public:
   }
 
   template <typename T>
-  friend bool operator!=(const IMatrix2D &lhs, const IMatrix2D<T> &rhs) { return !(lhs == rhs); }
+  friend bool operator!=(const IMatrix2D &lhs, const IMatrix2D<T> &rhs) {
+    return !(lhs == rhs);
+  }
 
   constexpr std::ostream &Print(std::ostream &os) const;
 };
@@ -150,13 +152,23 @@ struct MatrixDataType<Type, matrix::kDynamicSize, matrix::kDynamicSize> {
   constexpr MatrixDataType(MatrixDataType &&other) noexcept :
       entries(std::move(other.entries)), num_rows{other.num_rows}, num_cols{other.num_cols} {}
 
-  constexpr MatrixDataType &operator=(const MatrixDataType &other) {
-    if (this != &other) entries = other.entries;
+  MatrixDataType &operator=(const MatrixDataType &other) {
+    if (this != &other) {
+      entries = other.entries;
+      num_rows = other.num_rows;
+      num_cols = other.num_cols;
+    }
+
     return *this;
   }
 
-  constexpr MatrixDataType &operator=(MatrixDataType &&other) noexcept {
-    if (this != &other) entries = std::move(other.entries);
+  MatrixDataType &operator=(MatrixDataType &&other) noexcept {
+    if (this != &other) {
+      entries = std::move(other.entries);
+      num_rows = other.num_rows;
+      num_cols = other.num_cols;
+    }
+
     return *this;
   }
 };
@@ -309,8 +321,13 @@ public:
     return RowConst_T::Create(this, row);
   }
 
-  [[nodiscard]] constexpr Row_T operator[](const std::size_t row) { return At(row); }
-  [[nodiscard]] constexpr RowConst_T operator[](const std::size_t row) const { return At(row); }
+  [[nodiscard]] constexpr Row_T operator[](const std::size_t row) {
+    return Row_T::Create(this, row);
+  }
+
+  [[nodiscard]] constexpr RowConst_T operator[](const std::size_t row) const {
+    return RowConst_T::Create(this, row);
+  }
 
   template <typename T, std::size_t R, std::size_t C>
   friend bool operator==(const Matrix2D &lhs, const Matrix2D<T, R, C> &rhs) {
@@ -318,7 +335,9 @@ public:
   }
 
   template <typename T, std::size_t R, std::size_t C>
-  friend bool operator!=(const Matrix2D &lhs, const Matrix2D<T, R, C> &rhs) { return !(lhs == rhs); }
+  friend bool operator!=(const Matrix2D &lhs, const Matrix2D<T, R, C> &rhs) {
+    return !(lhs == rhs);
+  }
 
   Matrix2D<Type> WithNewSize(const std::size_t new_rows, const std::size_t new_cols) {
     if (new_cols == NumCols() && new_rows == NumRows()) {
@@ -577,8 +596,7 @@ public:
    * Computes the Kronecker product of two matrices (aka the tensor product)
    */
   template <typename OtherType, std::size_t OtherRows, std::size_t OtherCols>
-  constexpr Matrix2D<tmp::multiply_result_t<Type, OtherType>, Rows * OtherRows, Cols * OtherCols>
-  Tensor(const Matrix2D<OtherType, OtherRows, OtherCols> &rhs) const {
+  constexpr auto Tensor(const Matrix2D<OtherType, OtherRows, OtherCols> &rhs) const {
     constexpr bool other_dynamic = matrix::are_dynamic_v<OtherRows, OtherCols>;
 
     // Actual matrix sizes

@@ -101,7 +101,7 @@ void EditorWindowManager::DrawWindows() {
     ImGui::End();
   }
 
-  ImGui::ShowDemoWindow();
+  // ImGui::ShowDemoWindow();
 }
 
 void EditorWindowManager::ResetWindows() {
@@ -120,5 +120,11 @@ void EditorWindowManager::ResetWindows() {
       .name = "Circuits",
       .on_draw = [&] { circuit_palette_.Draw(); },
       .can_close = false,
+  });
+
+  windows_.emplace_back(EditorWindow{
+    .name = "Circuit Info",
+    .on_draw = [&]{ circuit_info_.Draw(); },
+    .can_close = false,
   });
 }
