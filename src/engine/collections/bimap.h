@@ -8,14 +8,12 @@
 #include <list>
 #include <set>
 
-namespace sdw::core {
-
 /**
-* An unordered bidirectional map. Inserted elements are stored only once unlike maintaining two
-* separate maps.
-* @tparam KeyType The key type when forward
-* @tparam ValType The value type when forward
-*/
+ * An unordered bidirectional map. Inserted elements are stored only once unlike maintaining two
+ * separate maps.
+ * @tparam KeyType The key type when forward
+ * @tparam ValType The value type when forward
+ */
 template <typename KeyType, typename ValType>
 class BiMap {
 private:
@@ -24,7 +22,7 @@ private:
     ValType val;
 
     template <typename K, typename V>
-    Entry(K &&k, V &&v): key(std::forward<K>(k)), val(std::forward<V>(v)) {}
+    Entry(K &&k, V &&v) : key(std::forward<K>(k)), val(std::forward<V>(v)) {}
   };
 
   struct ForwardCompare {
@@ -41,8 +39,8 @@ private:
     bool operator()(const ValType &v, const Entry *e) const noexcept { return v < e->val; }
   };
 
-  std::set<const Entry*, ForwardCompare> forward_index_{ForwardCompare()};
-  std::set<const Entry*, ReverseCompare> reverse_index_{ReverseCompare()};
+  std::set<const Entry *, ForwardCompare> forward_index_{ForwardCompare()};
+  std::set<const Entry *, ReverseCompare> reverse_index_{ReverseCompare()};
 
   using ForwardIterator = typename decltype(forward_index_)::iterator;
   using ReverseIterator = typename decltype(reverse_index_)::iterator;
@@ -115,9 +113,8 @@ public:
     forward_index_.erase(fwd_itr);
     reverse_index_.erase(rvs_itr);
 
-    std::erase_if(storage_, [&entry](Entry &el) {
-      return el.key == entry.key && el.val == entry.val;
-    });
+    std::erase_if(storage_,
+                  [&entry](Entry &el) { return el.key == entry.key && el.val == entry.val; });
 
     return true;
   }
@@ -141,9 +138,8 @@ public:
     forward_index_.erase(fwd_itr);
     reverse_index_.erase(rvs_itr);
 
-    std::erase_if(storage_, [&entry](Entry &item) {
-      return item.key == entry.key && item.val == entry.val;
-    });
+    std::erase_if(storage_,
+                  [&entry](Entry &item) { return item.key == entry.key && item.val == entry.val; });
 
     return true;
   }
@@ -159,8 +155,6 @@ public:
    * @return True if the map is empty
    */
   [[nodiscard]] bool Empty() const noexcept { return storage_.empty(); }
-
 };
-}
 
-#endif //BIMAP_H
+#endif // BIMAP_H

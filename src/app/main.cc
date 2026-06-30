@@ -1,21 +1,20 @@
-#define EXIT_SUCCESS 0
-#define EXIT_FAILURE 1
-
 #include <exception>
 #include <iostream>
+
+#include "application/application.h"
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
 #endif
 
-#include "application.h"
+#define EXIT_SUCCESS 0
+#define EXIT_FAILURE 1
 
-inline std::string ExceptionWhat(
-    const std::exception_ptr &e_ptr = std::current_exception()) noexcept {
-  if (!e_ptr) return "[BAD EXCEPTION]";
+static std::string ExceptionWhat(const std::exception_ptr &e = std::current_exception()) noexcept {
+  if (!e) return "[BAD EXCEPTION]";
 
   try {
-    std::rethrow_exception(e_ptr);
+    std::rethrow_exception(e);
   } catch (const std::exception &ex) {
     return ex.what();
   } catch (const std::string &ex) {
@@ -29,7 +28,7 @@ inline std::string ExceptionWhat(
 
 int main() {
   try {
-    Application app;
+    Application &app = Application::Instance();
 
     if (!app.Init()) {
       return EXIT_FAILURE; // <-- Breakpoint recommended here

@@ -5,42 +5,55 @@
 #ifndef APPLICATION_H
 #define APPLICATION_H
 
-// #include <webgpu.h>
 #include <webgpu/webgpu.hpp>
 
-#include "GLFW/glfw3.h"
+#include "../editor_windows/editor_window_manager.h"
+#include "device_window.h"
 
-constexpr int kWindowWidth = 640;
-constexpr int kWindowHeight = 480;
 constexpr WGPUColor kWindowClearColor = {100 / 255.0, 149 / 255.0, 237 / 255.0, 1};
 
+/// The application (singleton)
 class Application {
 private:
   bool is_running_ = false;
-  GLFWwindow *window_ = nullptr;
   WGPUInstance instance_ = nullptr;
   WGPUDevice device_ = nullptr;
   WGPUQueue queue_ = nullptr;
   WGPUSurface surface_ = nullptr;
+  DeviceWindow window_{&surface_};
+  EditorWindowManager window_manager_{};
 
-  WGPUTextureView GetNextTextureView();
+  WGPUTextureFormat preferred_format_ = WGPUTextureFormat_Undefined;
 
   void BeginFrame();
   void DrawFrame();
   void EndFrame();
+
+  WGPUTextureView GetNextTextureView();
+
+  Application() = default;
 
 public:
   bool Init(); ///< Called on initialization
   void Terminate(); ///< Terminates all processes (called automatically in destructor)
   void Tick(); ///< Called every update
 
+  ~Application() { Terminate(); }
+
+  Application(Application const &) = delete;
+  void operator=(Application const &) = delete;
+
+  static Application &Instance() {
+    static Application instance;
+    return instance;
+  }
+
   /**
    * True if the program should continue running.
    * @return False if the GLFW window should close, otherwise true.
    */
-  [[nodiscard]] bool ShouldContinue() const { return !glfwWindowShouldClose(window_); }
-
-  ~Application() { Terminate(); }
+  [[nodiscard]] bool ShouldContinue() const noexcept;
+  [[nodiscard]] WGPUSurfaceConfiguration BuildSurfaceConfig(const DeviceWindow &window) const;
 };
 
 #endif // APPLICATION_H
