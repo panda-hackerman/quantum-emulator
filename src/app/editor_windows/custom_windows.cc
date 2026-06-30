@@ -177,10 +177,10 @@ void CircuitPalette::Draw() {
     ImGui::PushID(i);
 
     const GateButton *elem = gate::kKnownGates[i];
-    ImGui::Button(elem->name, button_size_);
+    ImGui::Button(elem->name, kButtonSize);
 
     const float last_button_x2 = ImGui::GetItemRectMax().x;
-    const float next_button_x2 = last_button_x2 + style.ItemSpacing.x + button_size_.x;
+    const float next_button_x2 = last_button_x2 + style.ItemSpacing.x + kButtonSize.x;
 
     if ((i < num_gates - 1) && next_button_x2 < window_visible_x2) {
       ImGui::SameLine();

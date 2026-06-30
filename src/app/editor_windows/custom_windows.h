@@ -80,7 +80,7 @@ public:
 
 class CircuitPalette {
 public:
-  static constexpr ImVec2 button_size_{60, 60};
+  static constexpr ImVec2 kButtonSize{60, 60};
 
   void Draw();
 };
