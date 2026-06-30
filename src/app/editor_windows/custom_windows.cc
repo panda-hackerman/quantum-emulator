@@ -4,6 +4,8 @@
 
 #include "custom_windows.h"
 
+#include <utility>
+
 #include "imgui.h"
 #include "math/simulator.h"
 
@@ -35,7 +37,7 @@ void CircuitEditor::Draw() {
     ImGui::TableHeadersRow();
 
     // Loop over actual grid
-    for (int qubit = 0; qubit < data.num_qubits; ++qubit) {
+    for (Circuit::GridSize_T qubit = 0; std::cmp_less(qubit, data.num_qubits); ++qubit) {
 
       { // Column 0 (labels)
         ImGui::PushID(qubit);
@@ -46,7 +48,7 @@ void CircuitEditor::Draw() {
       }
 
       // Column 1 to N+1
-      for (int layer = 0; layer < data.num_layers; ++layer) {
+      for (Circuit::GridSize_T layer = 0; std::cmp_less(layer, data.num_layers); ++layer) {
         ImGui::PushID(layer);
         ImGui::TableSetColumnIndex(layer + 1);
 
@@ -55,8 +57,7 @@ void CircuitEditor::Draw() {
 
         // DRAG AND DROP / SOURCE
         if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)) {
-          GateSwapPayload payload = {static_cast<Circuit::GridSize_T>(qubit),
-                                     static_cast<Circuit::GridSize_T>(layer)};
+          GateSwapPayload payload = {qubit, layer};
 
           ImGui::SetDragDropPayload("BUTTON_SWAP", &payload, sizeof(payload));
           ImGui::Text("%s", "Move gate");
@@ -101,7 +102,7 @@ void CircuitEditor::UpdateCircuitSize() {
   if (std::cmp_not_equal(qubits, circuit_->GetNumQubits()) ||
       std::cmp_not_equal(layers, circuit_->GetNumLayers())) {
     circuit_->SetSize(static_cast<Circuit::GridSize_T>(qubits),
-                     static_cast<Circuit::GridSize_T>(layers));
+                      static_cast<Circuit::GridSize_T>(layers));
 
     *circuit_dirty_ = true;
   }
