@@ -50,7 +50,7 @@ void CircuitEditor::Draw() {
         ImGui::PushID(layer);
         ImGui::TableSetColumnIndex(layer + 1);
 
-        const GateButton *gate_button = buttons_arr[qubit][layer];
+        const GateButton *gate_button = buttons_arr_[qubit][layer];
         ImGui::Button(gate_button->name, ImVec2{60, 60});
 
         // DRAG AND DROP / SOURCE
@@ -68,7 +68,7 @@ void CircuitEditor::Draw() {
           if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("BUTTON_SWAP")) {
             auto [payload_qubit, payload_layer] = *static_cast<GateSwapPayload *>(payload->Data);
 
-            Set(qubit, layer, buttons_arr[payload_qubit][payload_layer]);
+            Set(qubit, layer, buttons_arr_[payload_qubit][payload_layer]);
             Set(payload_qubit, payload_layer, gate_button);
           }
 
@@ -98,9 +98,9 @@ void CircuitEditor::UpdateCircuitSize() {
   qubits = std::clamp<int>(qubits, Circuit::kMinQubits, Circuit::kMaxQubits);
   layers = std::clamp<int>(layers, Circuit::kMinDepth, Circuit::kMaxDepth);
 
-  if (std::cmp_not_equal(qubits, circuit->GetNumQubits()) ||
-      std::cmp_not_equal(layers, circuit->GetNumLayers())) {
-    circuit->SetSize(static_cast<Circuit::GridSize_T>(qubits),
+  if (std::cmp_not_equal(qubits, circuit_->GetNumQubits()) ||
+      std::cmp_not_equal(layers, circuit_->GetNumLayers())) {
+    circuit_->SetSize(static_cast<Circuit::GridSize_T>(qubits),
                      static_cast<Circuit::GridSize_T>(layers));
 
     *circuit_dirty_ = true;
@@ -109,33 +109,33 @@ void CircuitEditor::UpdateCircuitSize() {
 
 void CircuitEditor::Set(const Circuit::GridSize_T qubit, const Circuit::GridSize_T layer,
                         const GateButton *button) {
-  if (circuit == nullptr) return;
+  if (circuit_ == nullptr) return;
 
   switch (button->part_type) {
     case Circuit::Part::kEmpty:
-      circuit->AddEmpty(qubit, layer);
+      circuit_->AddEmpty(qubit, layer);
       break;
     case Circuit::Part::kMatrix2x2:
-      circuit->AddGate(qubit, layer, button->matrix);
+      circuit_->AddGate(qubit, layer, button->matrix);
       break;
     case Circuit::Part::kControlBit:
-      circuit->AddControlBit(qubit, layer);
+      circuit_->AddControlBit(qubit, layer);
       break;
     case Circuit::Part::kAntiControlBit:
-      circuit->AddAntiControlBit(qubit, layer);
+      circuit_->AddAntiControlBit(qubit, layer);
       break;
     case Circuit::Part::kMeasure:
-      circuit->AddMeasurement(qubit, layer);
+      circuit_->AddMeasurement(qubit, layer);
       break;
     case Circuit::Part::kSwap:
-      circuit->AddSwap(qubit, layer);
+      circuit_->AddSwap(qubit, layer);
       break;
     default:
       std::cerr << "Unimplemented part type!" << std::endl;
       return;
   }
 
-  buttons_arr[qubit][layer] = button;
+  buttons_arr_[qubit][layer] = button;
   *circuit_dirty_ = true;
 }
 
@@ -144,13 +144,13 @@ void CircuitEditor::ReadFromCircuit() {
   // TODO: Do something different that doesn't involve this...
   for (Circuit::GridSize_T qubit = 0; qubit < Circuit::kMaxQubits; ++qubit) {
     for (Circuit::GridSize_T layer = 0; layer < Circuit::kMaxDepth; ++layer) {
-      const Circuit::Part part_type = circuit->GetPartTypeUnsafe(qubit, layer);
-      const Circuit::Matrix_T *matrix = circuit->GetMatrixUnsafe(qubit, layer);
+      const Circuit::Part part_type = circuit_->GetPartTypeUnsafe(qubit, layer);
+      const Circuit::Matrix_T *matrix = circuit_->GetMatrixUnsafe(qubit, layer);
 
       bool set = false;
       for (const GateButton *button : gate::kKnownGates) {
         if (part_type == button->part_type && button->MatrixMatches(matrix)) {
-          buttons_arr[qubit][layer] = button;
+          buttons_arr_[qubit][layer] = button;
           set = true;
           break;
         }
@@ -176,10 +176,10 @@ void CircuitPalette::Draw() {
     ImGui::PushID(i);
 
     const GateButton *elem = gate::kKnownGates[i];
-    ImGui::Button(elem->name, button_size);
+    ImGui::Button(elem->name, button_size_);
 
     const float last_button_x2 = ImGui::GetItemRectMax().x;
-    const float next_button_x2 = last_button_x2 + style.ItemSpacing.x + button_size.x;
+    const float next_button_x2 = last_button_x2 + style.ItemSpacing.x + button_size_.x;
 
     if ((i < num_gates - 1) && next_button_x2 < window_visible_x2) {
       ImGui::SameLine();

@@ -48,14 +48,14 @@ inline constexpr auto kKnownGates = std::array{
 
 class CircuitEditor {
 private:
-  Circuit *circuit;
+  Circuit *circuit_;
   bool *circuit_dirty_;
-  const GateButton *buttons_arr[Circuit::kMaxQubits][Circuit::kMaxDepth]; // TODO: Dynamic?
+  const GateButton *buttons_arr_[Circuit::kMaxQubits][Circuit::kMaxDepth]; // TODO: Dynamic?
 
 public:
   struct { // Data that will be touched directly by ImGui (e.g. by an input)
-    int num_qubits;
-    int num_layers;
+    int num_qubits = -1;
+    int num_layers = -1;
   } data;
 
   struct GateSwapPayload {
@@ -63,8 +63,8 @@ public:
     Circuit::GridSize_T from_layer;
   };
 
-  explicit CircuitEditor(Circuit *circuit, bool *circuit_dirty_) :
-      circuit{circuit}, circuit_dirty_{circuit_dirty_}, buttons_arr{} {
+  explicit CircuitEditor(Circuit *circuit, bool *circuit_dirty) :
+      circuit_{circuit}, circuit_dirty_{circuit_dirty}, buttons_arr_{} {
     data.num_qubits = circuit->GetNumQubits();
     data.num_layers = circuit->GetNumLayers();
 
@@ -80,7 +80,7 @@ public:
 
 class CircuitPalette {
 public:
-  static constexpr ImVec2 button_size{60, 60};
+  static constexpr ImVec2 button_size_{60, 60};
 
   void Draw();
 };
