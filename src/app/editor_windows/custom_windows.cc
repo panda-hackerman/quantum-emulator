@@ -142,8 +142,8 @@ void CircuitEditor::Set(const Circuit::GridSize_T qubit, const Circuit::GridSize
 void CircuitEditor::ReadFromCircuit() {
   /* This is really horrible and error-prone, I shouldn't really have to do this.... but alas... */
   // TODO: Do something different that doesn't involve this...
-  for (int qubit = 0; qubit < Circuit::kMaxQubits; ++qubit) {
-    for (int layer = 0; layer < Circuit::kMaxDepth; ++layer) {
+  for (Circuit::GridSize_T qubit = 0; qubit < Circuit::kMaxQubits; ++qubit) {
+    for (Circuit::GridSize_T layer = 0; layer < Circuit::kMaxDepth; ++layer) {
       const Circuit::Part part_type = circuit->GetPartTypeUnsafe(qubit, layer);
       const Circuit::Matrix_T *matrix = circuit->GetMatrixUnsafe(qubit, layer);
 
@@ -172,7 +172,7 @@ void CircuitPalette::Draw() {
   const float window_visible_x2 = ImGui::GetCursorScreenPos().x + ImGui::GetContentRegionAvail().x;
 
   constexpr std::size_t num_gates = gate::kKnownGates.size();
-  for (int i = 0; i < num_gates; ++i) {
+  for (int i = 0; std::cmp_less(i, num_gates); ++i) {
     ImGui::PushID(i);
 
     const GateButton *elem = gate::kKnownGates[i];
@@ -187,7 +187,7 @@ void CircuitPalette::Draw() {
 
     // DRAG AND DROP SOURCE
     if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)) {
-      ImGui::SetDragDropPayload("BUTTON_SET", &elem, sizeof(elem));
+      ImGui::SetDragDropPayload("BUTTON_SET", &elem, sizeof(*elem));
       ImGui::Text("%s", "Set gate");
       ImGui::EndDragDropSource();
     }
@@ -218,9 +218,6 @@ void CircuitInfoPanel::RecomputeInfo() {
   data.Print(oss);
 
   info_str_ = oss.str();
-
-  // std::cout << "Updated layer:" << std::endl;
-  // std::cout << info_str_ << std::endl;
 
   *circuit_dirty_ = false;
 }

@@ -17,8 +17,10 @@
   Matrix2D<std::complex<float>> out_matrix{1, 1};
   out_matrix.At(0, 0) = 1;
 
+  // Number of qubits
+  const Circuit::GridSize_T n_qubits = static_cast<Circuit::GridSize_T>(parts.size());
+
   // = [1] ⊗ [U_{n-1}] ⊗ ... ⊗ [U_0]
-  const int n_qubits = parts.size(); // Number of qubits
   for (int i = (n_qubits - 1); i >= 0; --i) {
     if (parts[i] == Circuit::Part::kMatrix2x2) {
       out_matrix = out_matrix.Tensor(*matrices[i]);

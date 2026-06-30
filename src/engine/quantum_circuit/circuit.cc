@@ -4,6 +4,8 @@
 
 #include "circuit.h"
 
+#include <iostream>
+
 void Circuit::AddEmpty(const GridSize_T qubit, const GridSize_T layer) {
   id_to_matrix_.Remove(IndexOf(qubit, layer));
   parts_array_[IndexOf(qubit, layer)] = Part::kEmpty;
@@ -76,4 +78,29 @@ const Circuit::Matrix_T *Circuit::GetMatrixUnsafe(const GridSize_T qubit,
   }
 
   return nullptr;
+}
+
+std::vector<Circuit::Part> Circuit::GetPartsInLayer(const GridSize_T layer) const {
+  AssertInRange(0, layer);
+
+  const auto arr_begin = parts_array_.begin();
+
+  const auto first = arr_begin + IndexOf(0, layer);
+  const auto last = first + num_qubits_;
+
+  return {first, last};
+}
+
+std::vector<const Circuit::Matrix_T *> Circuit::GetMatricesInLayer(const GridSize_T layer) const {
+  AssertInRange(0, layer);
+
+  std::vector<const Matrix_T *> out(num_qubits_, nullptr);
+
+  for (GridSize_T qubit = 0; qubit < num_qubits_; ++qubit) {
+    if (parts_array_[IndexOf(qubit, layer)] == Part::kMatrix2x2) {
+      out[qubit] = id_to_matrix_.Get(IndexOf(qubit, layer));
+    }
+  }
+
+  return out;
 }

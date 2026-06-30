@@ -16,7 +16,7 @@ public:
   /// Unsigned integer type guaranteed to store up to at least the max qubit and layer size.
   using GridSize_T = std::uint_least8_t;
   /// Integer type guaranteed to have at least 1 unique value for each possible qubit & layer index.
-  using GridIndex_T = std::uint_least16_t;
+  using GridIndex_T = std::uint_least8_t;
 
   /// Pointer to generic complex matrix
   using Matrix_T = Matrix2D<std::complex<float>, 2, 2>;
@@ -30,10 +30,9 @@ public:
     kMeasure,
     kSwap,
   };
-
-  // TODO: Test performance for a reasonable maximums for qubits & depth
+  
   static constexpr GridSize_T kMinQubits = 1; ///< Minimum allowed qubits in a circuit
-  static constexpr GridSize_T kMaxQubits = 16; ///< Maximum allowed qubits in a circuit
+  static constexpr GridSize_T kMaxQubits = 8; ///< Maximum allowed qubits in a circuit
   static constexpr GridSize_T kMinDepth = 1; ///< Minimum allowed layers (aka circuit depth)
   static constexpr GridSize_T kMaxDepth = 16; ///< Maximum allowed layers (aka circuit depth)
 
@@ -66,7 +65,7 @@ protected:
    * @see Circuit::kMinQubits, Circuit::kMaxQubits, Circuit::kMinDepth, Circuit::kMaxQubits
    */
   static constexpr void AssertInLimit(const GridSize_T qubit, const GridSize_T layer) {
-    if (qubit < kMinQubits || qubit > kMaxQubits || layer < kMinQubits || layer > kMaxQubits) {
+    if (qubit < kMinQubits || qubit > kMaxQubits || layer < kMinDepth || layer > kMaxDepth) {
       throw std::out_of_range(std::format(
           "Qubit {} and/or Layer {} must be within the ranges ({} to {}) and ({} to {}), respectively",
           qubit, layer, kMinQubits, kMaxQubits, kMinDepth, kMaxDepth));
@@ -87,7 +86,7 @@ protected:
 
 public:
   Circuit(const GridSize_T qubits, const GridSize_T layers) :
-      num_qubits_{qubits}, num_layers_{layers} {}
+      num_qubits_{qubits}, num_layers_{layers}, parts_array_{} {}
 
   void AddEmpty(GridSize_T qubit, GridSize_T layer);
   void AddGate(GridSize_T qubit, GridSize_T layer, const Matrix_T *matrix);
@@ -112,29 +111,9 @@ public:
   /// Get the gate at the given index without bounds checking
   [[nodiscard]] const Matrix_T *GetMatrixUnsafe(GridSize_T qubit, GridSize_T layer) const;
 
-  [[nodiscard]] std::vector<Part> GetPartsInLayer(const GridSize_T layer) const {
-    AssertInRange(0, layer);
+  [[nodiscard]] std::vector<Part> GetPartsInLayer(GridSize_T layer) const;
 
-    const auto arr_begin = parts_array_.begin();
-    const auto first = arr_begin + IndexOf(0, layer);
-    const auto last = arr_begin + IndexOf(num_qubits_, layer);
-
-    return std::vector(first, last);
-  }
-
-  [[nodiscard]] std::vector<const Matrix_T *> GetMatricesInLayer(const GridSize_T layer) const {
-    AssertInRange(0, layer);
-
-    std::vector<const Matrix_T *> out(num_qubits_, nullptr);
-
-    for (GridSize_T qubit = 0; qubit < num_qubits_; ++qubit) {
-      if (parts_array_[IndexOf(qubit, layer)] == Part::kMatrix2x2) {
-        out[qubit] = id_to_matrix_.Get(IndexOf(qubit, layer));
-      }
-    }
-
-    return out;
-  }
+  [[nodiscard]] std::vector<const Matrix_T *> GetMatricesInLayer(GridSize_T layer) const;
 
   /**
    * Builds a simple example circuit, which looks like:
