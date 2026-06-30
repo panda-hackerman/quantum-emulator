@@ -16,7 +16,7 @@ to serve as an educational tool, and to be reasonably optimized.
 - [License](#license)
 
 ## Features
-(WIP)
+A small-scale quantum emulator. Can simulate a small number of qubits (~8), and display information about the circuit.
 
 ## How to Compile
 This project is theoretically cross-platform should be able to be compiled on Windows, MacOS, and Linux.
@@ -127,7 +127,7 @@ To keep it open (so you can actually see the results), run the program from the 
 Follow the included style! (`.clang-format`)
 
 ## License
-TBD
+This project is licensed under the Unlicense ([unlicense.org](https://unlicense.org/))
 
 This project uses the following third-party libraries:
 - [Dear ImGUI](https://github.com/ocornut/imgui) ([MIT License](https://github.com/ocornut/imgui/blob/master/LICENSE.txt))
