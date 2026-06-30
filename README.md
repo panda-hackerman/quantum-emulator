@@ -124,10 +124,13 @@ To keep it open (so you can actually see the results), run the program from the 
 ```
 
 ## Contributing
-Follow the included style! (`.clang-format`)
+All contributions are welcome! If you make a PR, try to follow the code style:
+- Follow the included `.clang-format` style! 
+- You should follow the convention of using the `.cc` and `.h` file extensions for C++ source and header files respectively.
+- Contrary to some textbook conventions, matrices and the circuit diagrams are zero-indexed!
 
 ## License
-This project is licensed under the Unlicense ([unlicense.org](https://unlicense.org/))
+This project is licensed under the Unlicense ([unlicense.org](https://unlicense.org/)).
 
 This project uses the following third-party libraries:
 - [Dear ImGUI](https://github.com/ocornut/imgui) ([MIT License](https://github.com/ocornut/imgui/blob/master/LICENSE.txt))
