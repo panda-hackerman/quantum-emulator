@@ -10,8 +10,6 @@
 #include <unordered_map>
 #include <vector>
 
-namespace sdw::core {
-
 /// Abstract sparse set interface for runtime polymorphism.
 class ISparseSet {
 public:
@@ -40,7 +38,6 @@ public:
  */
 template <std::integral KeyType, typename ValueType>
 class SparseSet : public ISparseSet {
-
 private:
   using DenseMap = std::vector<ValueType>;
   using SparseMap = std::unordered_map<KeyType, std::size_t>;
@@ -95,7 +92,7 @@ public:
    */
   ValueType &Get(const KeyType id) {
     if (!sparse_.contains(id)) {
-      throw std::out_of_range("No such element with id:" + std::to_string(id));
+      throw std::out_of_range("No such element with id: " + std::to_string(id));
     }
 
     std::size_t index = sparse_.at(id);
@@ -123,11 +120,13 @@ public:
 
   /** Remove an element by its id. */
   bool Remove(const std::size_t id) override {
-    if (!sparse_.contains(id)) {
+    const KeyType key = static_cast<KeyType>(id);
+
+    if (!sparse_.contains(key)) {
       return false;
     }
 
-    std::size_t index = sparse_[id];
+    std::size_t index = sparse_[key];
     std::size_t back_index = dense_.size() - 1;
     KeyType back_entity = sparse_reverse_[back_index];
 
@@ -136,7 +135,7 @@ public:
     sparse_[back_entity] = index;
     sparse_reverse_[index] = back_entity;
 
-    sparse_.erase(id);
+    sparse_.erase(key);
     sparse_reverse_.erase(back_index);
     dense_.pop_back();
 
@@ -153,7 +152,9 @@ public:
   }
 
   /** True if the list contains the specified id. */
-  [[nodiscard]] bool Contains(const std::size_t id) const override { return sparse_.contains(id); }
+  [[nodiscard]] bool Contains(const std::size_t id) const override {
+    return sparse_.contains(static_cast<KeyType>(id));
+  }
 
   /** Returns the number of elements in the list. */
   [[nodiscard]] std::size_t Size() const override { return dense_.size(); }
@@ -173,6 +174,5 @@ public:
   ConstIterator cbegin() const noexcept { return dense_.cbegin(); }
   ConstIterator cend() const noexcept { return dense_.cend(); }
 };
-} // namespace sdw::core
 
 #endif // SPARSE_SET_H

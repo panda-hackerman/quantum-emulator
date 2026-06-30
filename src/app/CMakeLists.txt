@@ -1,11 +1,17 @@
 add_executable(App main.cc
         util/device_adapter_util.cc
         util/device_adapter_util.h
-        application.cc
-        application.h
         util/wgpu_string_view_util.h
         util/sleep_util.h
         util/settings_constants.h
+        application/application.cc
+        application/application.h
+        editor_windows/editor_window_manager.cc
+        editor_windows/editor_window_manager.h
+        application/device_window.h
+        application/device_window.cc
+        editor_windows/custom_windows.h
+        editor_windows/custom_windows.cc
 )
 
 target_link_libraries(App PRIVATE Engine)
