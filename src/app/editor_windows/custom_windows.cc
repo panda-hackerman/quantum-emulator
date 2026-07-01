@@ -10,11 +10,12 @@
 #include "math/simulator.h"
 
 void CircuitEditor::Draw() {
-  ImGui::PushItemWidth(80);
+  auto width = ImGui::GetFontSize() * 6;
+  ImGui::PushItemWidth(width);
   ImGui::InputInt("Qubits", &data.num_qubits);
   ImGui::SameLine();
   ImGui::InputInt("Layers", &data.num_layers);
-  ImGui::PopItemWidth();
+  // ImGui::PopItemWidth();
 
   // Update Size
   UpdateCircuitSize();
@@ -53,7 +54,7 @@ void CircuitEditor::Draw() {
         ImGui::TableSetColumnIndex(layer + 1);
 
         const GateButton *gate_button = buttons_arr_[qubit][layer];
-        ImGui::Button(gate_button->name, ImVec2{60, 60});
+        ImGui::Button(gate_button->name, GetCircuitButtonSize());
 
         // DRAG AND DROP / SOURCE
         if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)) {
@@ -171,16 +172,17 @@ void CircuitEditor::ReadFromCircuit() {
 void CircuitPalette::Draw() {
   const ImGuiStyle &style = ImGui::GetStyle();
   const float window_visible_x2 = ImGui::GetCursorScreenPos().x + ImGui::GetContentRegionAvail().x;
+  const ImVec2 button_size = GetCircuitButtonSize();
 
   constexpr std::size_t num_gates = gate::kKnownGates.size();
   for (int i = 0; std::cmp_less(i, num_gates); ++i) {
     ImGui::PushID(i);
 
     const GateButton *elem = gate::kKnownGates[i];
-    ImGui::Button(elem->name, kButtonSize);
+    ImGui::Button(elem->name, button_size);
 
     const float last_button_x2 = ImGui::GetItemRectMax().x;
-    const float next_button_x2 = last_button_x2 + style.ItemSpacing.x + kButtonSize.x;
+    const float next_button_x2 = last_button_x2 + style.ItemSpacing.x + button_size.x;
 
     if ((i < num_gates - 1) && next_button_x2 < window_visible_x2) {
       ImGui::SameLine();

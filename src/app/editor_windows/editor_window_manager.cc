@@ -17,15 +17,8 @@ void EditorWindowManager::Init() {
 
   IMGUI_CHECKVERSION();
   ImGui::CreateContext();
-  ImGui::StyleColorsDark();
 
-  // TODO: Move to dedicated style builder/ file
-  ImGuiStyle &style = ImGui::GetStyle();
-  style.TabRounding = 8.f;
-  style.FrameRounding = 8.f;
-  style.GrabRounding = 8.f;
-  style.WindowRounding = 8.f;
-  style.PopupRounding = 8.f;
+  SetImGuiStyle();
 
   if constexpr (kImGuiIniPath != nullptr) {
     if (!std::filesystem::exists(kImGuiIniPath)) {
@@ -43,7 +36,7 @@ void EditorWindowManager::Init() {
   io.MouseDrawCursor = true; // Show mouse cursor on web platform
 #endif
 
-  ResetWindows();
+  SetupWindows();
 
   is_initialized_ = true;
 }
@@ -100,11 +93,9 @@ void EditorWindowManager::DrawWindows() {
 
     ImGui::End();
   }
-
-  // ImGui::ShowDemoWindow();
 }
 
-void EditorWindowManager::ResetWindows() {
+void EditorWindowManager::SetupWindows() {
   windows_.clear();
   circuit_ = Circuit::BuildExampleCircuit();
 
@@ -127,4 +118,24 @@ void EditorWindowManager::ResetWindows() {
     .on_draw = [&]{ circuit_info_.Draw(); },
     .can_close = false,
   });
+}
+
+void SetImGuiStyle() {
+  ImGuiStyle &style = ImGui::GetStyle();
+  ImGuiIO &io = ImGui::GetIO();
+
+  // Default dark colors
+  ImGui::StyleColorsDark();
+
+  // DPI Aware
+  io.ConfigDpiScaleFonts = true;
+  io.ConfigDpiScaleViewports = true;
+
+  // Rounding values
+  constexpr float rounding = 8.f;
+  style.TabRounding = rounding;
+  style.FrameRounding = rounding;
+  style.GrabRounding = rounding;
+  style.WindowRounding = rounding;
+  style.PopupRounding = rounding;
 }

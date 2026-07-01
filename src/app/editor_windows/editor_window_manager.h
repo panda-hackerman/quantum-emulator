@@ -39,11 +39,13 @@ public:
 #endif
 
   void Init();
-  void ResetWindows();
+  void SetupWindows();
   void DrawWindows();
   void Terminate();
 
   ~EditorWindowManager() { Terminate(); }
 };
+
+void SetImGuiStyle();
 
 #endif // WINDOW_MANAGER_H

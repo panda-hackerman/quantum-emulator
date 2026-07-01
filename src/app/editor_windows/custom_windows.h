@@ -80,8 +80,6 @@ public:
 
 class CircuitPalette {
 public:
-  static constexpr ImVec2 kButtonSize{60, 60};
-
   void Draw();
 };
 
@@ -98,5 +96,12 @@ public:
   void Draw();
   void RecomputeInfo();
 };
+
+inline ImVec2 GetCircuitButtonSize() {
+  constexpr ImVec2 norm = {80, 80};
+  const float factor = ImGui::GetFontSize() / 13;
+
+  return {norm.x * factor, norm.y * factor};
+}
 
 #endif // CUSTOM_WINDOWS_H
