@@ -16,6 +16,9 @@
 *.ico   binary
 *.svg   text    linguist-language=SVG
 
+*.ttf   binary
+*.otf   binary
+
 .gitattributes  export-ignore
 .gitignore      export-ignore
 .gitkeep        export-ignore

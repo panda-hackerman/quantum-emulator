@@ -124,6 +124,10 @@ void SetImGuiStyle() {
   ImGuiStyle &style = ImGui::GetStyle();
   ImGuiIO &io = ImGui::GetIO();
 
+  // Font
+  io.Fonts->AddFontDefaultVector(); // ProggyForever font
+  io.Fonts->AddFontFromFileTTF(RESOURCE_DIR "/fonts/cmr10.ttf", 10);
+
   // Default dark colors
   ImGui::StyleColorsDark();
 
