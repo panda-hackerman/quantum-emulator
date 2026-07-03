@@ -9,7 +9,7 @@
 #include <utility>
 
 #include "collections/sparse_set.h"
-#include "gate_matrices.h"
+#include "math/constants.h"
 
 class Circuit {
 public:

@@ -16,7 +16,10 @@
 
 /* You can change from float to double to increase precision */
 
+/// The underlying type for the complex number type
+using Complex_Base = float;
+
 /// A complex number
-using Complex = std::complex<float>;
+using Complex = std::complex<Complex_Base>;
 
 #endif // QUANTUMEMULATOR_TYPES_H

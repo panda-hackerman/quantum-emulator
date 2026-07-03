@@ -4,18 +4,19 @@
 
 #include "custom_windows.h"
 
+#include <bitset>
+#include <iostream>
 #include <utility>
 
 #include "imgui.h"
 #include "simulator/simulator.h"
 
 void CircuitEditor::Draw() {
-  auto width = ImGui::GetFontSize() * 6;
-  ImGui::PushItemWidth(width);
+  ImGui::PushItemWidth(ImGui::GetFontSize() * 6);
   ImGui::InputInt("Qubits", &data.num_qubits);
   ImGui::SameLine();
   ImGui::InputInt("Layers", &data.num_layers);
-  // ImGui::PopItemWidth();
+  ImGui::PopItemWidth();
 
   // Update Size
   UpdateCircuitSize();
@@ -200,7 +201,7 @@ void CircuitPalette::Draw() {
 }
 
 void CircuitInfoPanel::Draw() {
-  ImGui::Text("Circuit Info:");
+  ImGui::Text("State Vector:");
 
   if (*circuit_dirty_ == true || info_str_.empty()) {
     RecomputeInfo();
@@ -211,16 +212,27 @@ void CircuitInfoPanel::Draw() {
 
 void CircuitInfoPanel::RecomputeInfo() {
 
-  // const auto parts = circuit_->GetPartsInLayer(0);
-  // const auto matrices = circuit_->GetMatricesInLayer(0);
-  //
-  // const Matrix2D<std::complex<float>> data = ComputeLayer(parts, matrices);
-  //
-  // std::ostringstream oss;
-  //
-  // data.Print(oss);
-  //
-  // info_str_ = oss.str();
-  //
-  // *circuit_dirty_ = false;
+  const Circuit::GridSize_T num_qubits = circuit_->GetNumQubits();
+  const std::vector<Complex> state_vector = SimulateCircuitQubitWise(*circuit_);
+
+  info_str_ = "State Vector: \n";
+
+  for (int i = 0; i < state_vector.size(); ++i) {
+    const Complex &complex = state_vector[i];
+
+    // Convert decimal -> binary
+    std::string bit_string = std::bitset<sizeof(num_qubits) * 8>(i).to_string();
+    bit_string = bit_string.substr(bit_string.size() - num_qubits);
+
+    info_str_ += bit_string + ": " + PrettyPrint(complex) + '\n';
+  }
+
+  *circuit_dirty_ = false;
+}
+
+ImVec2 GetCircuitButtonSize() {
+  constexpr ImVec2 norm = {80, 80};
+  const float factor = ImGui::GetFontSize() / 13;
+
+  return {norm.x * factor, norm.y * factor};
 }

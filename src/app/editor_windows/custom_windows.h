@@ -4,9 +4,9 @@
 
 #ifndef CUSTOM_WINDOWS_H
 #define CUSTOM_WINDOWS_H
-#include <iostream>
 
 #include "imgui.h"
+#include "math/constants.h"
 #include "quantum_circuit/circuit.h"
 
 struct GateButton {
@@ -97,11 +97,6 @@ public:
   void RecomputeInfo();
 };
 
-inline ImVec2 GetCircuitButtonSize() {
-  constexpr ImVec2 norm = {80, 80};
-  const float factor = ImGui::GetFontSize() / 13;
-
-  return {norm.x * factor, norm.y * factor};
-}
+ImVec2 GetCircuitButtonSize();
 
 #endif // CUSTOM_WINDOWS_H
