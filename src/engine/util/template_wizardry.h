@@ -17,7 +17,7 @@ static constexpr std::array<T, R * C> Flatten2D(const std::array<std::array<T, C
 
   return [&]<std::size_t... Is>(std::index_sequence<Is...>) -> std::array<T, R * C> {
     auto it = std::ranges::begin(r);
-    return {(Is, *it++)...};
+    return {((void)Is, *it++)...};
   }(std::make_index_sequence<R * C>{});
 }
 
