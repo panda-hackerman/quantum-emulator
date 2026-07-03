@@ -1,6 +1,11 @@
-//
-// Created by Eli on 7/3/2026.
-//
+/**
+ * @file types.h
+ *
+ * @brief Generic type definitions
+ *
+ * @author Eli Michaud
+ * @since 7/3/2026
+ */
 
 #ifndef QUANTUMEMULATOR_TYPES_H
 #define QUANTUMEMULATOR_TYPES_H
@@ -14,4 +19,4 @@
 /// A complex number
 using Complex = std::complex<float>;
 
-#endif //QUANTUMEMULATOR_TYPES_H
+#endif // QUANTUMEMULATOR_TYPES_H

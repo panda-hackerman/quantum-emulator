@@ -1,12 +1,12 @@
-//
-// Created by Eli Michaud on 6/13/2026.
-//
-
-/* Contents of this file:
- * - Class Definitions:
- *   - IMatrix2D
- *   - MatrixDataType
- *   - Matrix2D
+/**
+ * @file matrix.h
+ *
+ * @brief Classes for representing matrices.
+ * @details Class definition and implementation of a 2D Matrix, including common operations.
+ *
+ * @author Eli Michaud
+ * @since 6/13/2026
+ *
  */
 
 #ifndef MATRIX_H
@@ -15,7 +15,6 @@
 #include <algorithm>
 #include <array>
 #include <iomanip>
-#include <ranges>
 #include <span>
 #include <stdexcept>
 #include <vector>

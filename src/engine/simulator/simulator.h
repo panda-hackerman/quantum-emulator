@@ -1,6 +1,12 @@
-//
-// Created by Eli Michaud on 6/26/2026.
-//
+/**
+ * @file simulator.h
+ *
+ * @brief Different functions to simulate running the circuit.
+ * @see Circuit
+ *
+ * @author Eli Michaud
+ * @since 6/26/2026
+ */
 
 #ifndef SIMULATOR_H
 #define SIMULATOR_H
@@ -10,15 +16,14 @@
  * Simulate the effect of a circuit layer with a single gate and any number of control and/or
  * anti-control bits on the state vector.
  *
- * @details For a matrix \code U\endcode and state vector \code |a>\endcode, this algorithm
- * returns \code (I⊗ ... ⊗I⊗U⊗I⊗ ... ⊗I) * |a>\endcode, where \code I\endcode is the 2x2
- * identity matrix.
+ * @details For a matrix U and state vector |a>, this algorithm returns
+ * \code (I⊗ ... ⊗I⊗U⊗I⊗ ... ⊗I) * |a>\endcode, where I is the (2x2) identity matrix.
  *
  * @remark Implementation based on McGuffin et al. "How to Write a Simulator for Quantum Circuits
  * from Scratch: A Tutorial".
  *
- * @param in The input state vector \code |a>\endcode. Size must be 2^n.
- * @param num_qubits The number of qubits \code n\endcode.
+ * @param in The input state vector |a>. Size must be 2^n.
+ * @param num_qubits The number of qubits (n).
  * @param matrix The 2x2 unitary matrix representing the gate.
  * @param qubit_index Which qubit this gate is applied to.
  * @param parts A list of parts (indicates where the control bits are). Size must be equal to the
