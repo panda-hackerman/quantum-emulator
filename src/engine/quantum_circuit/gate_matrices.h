@@ -67,14 +67,6 @@ inline constexpr GateMatrix<2> kControlledNotAbove = {{{
     {0, 1, 0, 0},
 }}};
 
-inline constexpr GateMatrix<1> kNothing = {{{
-    {-kIm, 0},
-    {3, 4},
-}}};
-
-inline constexpr GateMatrix<1> kNothingTranspose = kNothing.Transposed();
-// inline constexpr Matrix2D<int> m = {2, 3};
-
 } // namespace matrix
 
 #endif // GATES_H
