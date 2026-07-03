@@ -19,8 +19,7 @@
  * @details For a matrix U and state vector |a>, this algorithm returns
  * \code (I⊗ ... ⊗I⊗U⊗I⊗ ... ⊗I) * |a>\endcode, where I is the (2x2) identity matrix.
  *
- * @remark Implementation based on McGuffin et al. "How to Write a Simulator for Quantum Circuits
- * from Scratch: A Tutorial".
+ * @remark Implementation based on McGuffin et al. \cite mcguffin_2025.
  *
  * @param in The input state vector |a>. Size must be 2^n.
  * @param num_qubits The number of qubits (n).
@@ -101,7 +100,7 @@
   return out;
 }
 
-// TODO: Control Bits
+// // TODO: Control Bits
 // [[nodiscard]] constexpr auto ComputeLayer(const std::vector<Circuit::Part> &parts,
 //                                           const std::vector<const Circuit::Matrix_T *> &matrices)
 //                                           {
