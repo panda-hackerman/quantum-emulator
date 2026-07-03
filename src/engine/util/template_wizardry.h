@@ -4,6 +4,7 @@
 
 #ifndef TEMPLATE_WIZARDRY_H
 #define TEMPLATE_WIZARDRY_H
+#include <ranges>
 #include <type_traits>
 
 /// Template helpers
