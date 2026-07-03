@@ -7,8 +7,9 @@ add_library(Engine
         quantum_circuit/circuit.cc
         quantum_circuit/gate_matrices.h
         util/print_util.h
-        math/simulator.h
+        simulator/simulator.h
         util/template_wizardry.h
+        types.h
 )
 
 target_include_directories(Engine PUBLIC

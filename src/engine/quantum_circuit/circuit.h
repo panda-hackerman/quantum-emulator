@@ -19,7 +19,7 @@ public:
   using GridIndex_T = std::uint_least8_t;
 
   /// Pointer to generic complex matrix
-  using Matrix_T = Matrix2D<std::complex<float>, 2, 2>;
+  using Matrix_T = Matrix2D<Complex, 2, 2>;
 
   /// A single circuit part.
   enum class Part : std::uint8_t {

@@ -29,17 +29,6 @@
 namespace matrix {
 inline constexpr std::size_t kDynamicSize = 0;
 
-/// Convert a 2D array into a flat (1D) array.
-template <typename T, std::size_t R, std::size_t C>
-static constexpr std::array<T, R * C> Flatten2D(const std::array<std::array<T, C>, R> &entries) {
-  auto r = std::ranges::join_view(entries);
-
-  return [&]<std::size_t... Is>(std::index_sequence<Is...>) -> std::array<T, R * C> {
-    auto it = std::ranges::begin(r);
-    return {(Is, *it++)...};
-  }(std::make_index_sequence<R * C>{});
-}
-
 // NOLINTBEGIN(*-identifier-naming)
 
 /// True if the parameter is equal to kDynamicSize
@@ -284,7 +273,7 @@ public:
 
   constexpr explicit(false) Matrix2D(const std::array<std::array<Type, Cols>, Rows> &entries = {})
     requires(!kIsDynamic)
-      : DataHolderType{matrix::Flatten2D(entries)} {}
+      : DataHolderType{tmp::Flatten2D(entries)} {}
 
   [[nodiscard]] constexpr std::size_t NumRows() const noexcept override {
     if constexpr (kIsDynamic)

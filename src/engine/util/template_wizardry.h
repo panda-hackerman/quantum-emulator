@@ -8,7 +8,19 @@
 
 /// Template helpers
 namespace tmp {
-// NOLINTBEGIN
+
+/// Convert a 2D array into a flat (1D) array.
+template <typename T, std::size_t R, std::size_t C>
+static constexpr std::array<T, R * C> Flatten2D(const std::array<std::array<T, C>, R> &entries) {
+  auto r = std::ranges::join_view(entries);
+
+  return [&]<std::size_t... Is>(std::index_sequence<Is...>) -> std::array<T, R * C> {
+    auto it = std::ranges::begin(r);
+    return {(Is, *it++)...};
+  }(std::make_index_sequence<R * C>{});
+}
+
+// NOLINTBEGIN(*-identifier-naming)
 
 /// Check if a type is an instantiation of a template class. Example usage:
 /// @code is_instance_of_v<vector<int>, vector> = true.
@@ -67,7 +79,7 @@ using divide_result_t = divide_result<L, R>::type;
 template <typename L, typename R>
 inline constexpr bool can_divide_v = std::is_invocable_v<decltype([](L lhs, R rhs) { return lhs / rhs; }), L, R>;
 
-// NOLINTEND
+// NOLINTEND(*-identifier-naming)
 } // namespace tmp
 
 #endif // TEMPLATE_WIZARDRY_H

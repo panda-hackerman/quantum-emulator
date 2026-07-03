@@ -7,7 +7,7 @@
 #include <utility>
 
 #include "imgui.h"
-#include "math/simulator.h"
+#include "simulator/simulator.h"
 
 void CircuitEditor::Draw() {
   auto width = ImGui::GetFontSize() * 6;
@@ -211,16 +211,16 @@ void CircuitInfoPanel::Draw() {
 
 void CircuitInfoPanel::RecomputeInfo() {
 
-  const auto parts = circuit_->GetPartsInLayer(0);
-  const auto matrices = circuit_->GetMatricesInLayer(0);
-
-  const Matrix2D<std::complex<float>> data = ComputeLayer(parts, matrices);
-
-  std::ostringstream oss;
-
-  data.Print(oss);
-
-  info_str_ = oss.str();
-
-  *circuit_dirty_ = false;
+  // const auto parts = circuit_->GetPartsInLayer(0);
+  // const auto matrices = circuit_->GetMatricesInLayer(0);
+  //
+  // const Matrix2D<std::complex<float>> data = ComputeLayer(parts, matrices);
+  //
+  // std::ostringstream oss;
+  //
+  // data.Print(oss);
+  //
+  // info_str_ = oss.str();
+  //
+  // *circuit_dirty_ = false;
 }
