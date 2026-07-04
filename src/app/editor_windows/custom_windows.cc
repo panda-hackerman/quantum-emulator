@@ -201,7 +201,7 @@ void CircuitPalette::Draw() {
 }
 
 void CircuitInfoPanel::Draw() {
-  ImGui::Text("State Vector:");
+  ImGui::Text("Probabilities:");
 
   if (*circuit_dirty_ == true || info_str_.empty()) {
     RecomputeInfo();
@@ -214,15 +214,25 @@ void CircuitInfoPanel::RecomputeInfo() {
 
   const Circuit::GridSize_T num_qubits = circuit_->GetNumQubits();
   const std::vector<Complex> state_vector = SimulateCircuitQubitWise(*circuit_);
+  const int state_vector_size = 1 << num_qubits;
 
-  info_str_ = "State Vector: \n";
+  if (state_vector.size() != state_vector_size) {
+    info_str_ = "[ERROR]";
+    std::cerr << "Invalid state vector size; must be 2^n for n qubits." << std::endl;
+    return;
+  }
 
-  for (int i = 0; i < state_vector.size(); ++i) {
+  info_str_ = "";
+
+  for (int i = state_vector_size - 1; i >= 0; --i) {
     const Complex &complex = state_vector[i];
+
+    if (complex == Complex{0, 0}) continue; // Skip zero
 
     // Convert decimal -> binary
     std::string bit_string = std::bitset<sizeof(num_qubits) * 8>(i).to_string();
     bit_string = bit_string.substr(bit_string.size() - num_qubits);
+    std::ranges::reverse(bit_string);
 
     info_str_ += bit_string + ": " + PrettyPrint(complex) + '\n';
   }
