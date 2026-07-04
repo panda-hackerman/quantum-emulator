@@ -115,6 +115,8 @@ bool Application::Init() {
 
   ImGui_ImplWGPU_Init(&init_info);
 
+  texture_manager_.LoadAllTextures(device_);
+
   // Now running... B)
   std::cout << "\nFinished Initialization! " << std::endl;
   is_running_ = true;
@@ -169,13 +171,12 @@ void Application::EndFrame() {
   WGPURenderPassEncoder render_pass = wgpuCommandEncoderBeginRenderPass(encoder, &render_pass_desc);
 
   ImGui_ImplWGPU_RenderDrawData(ImGui::GetDrawData(), render_pass);
-  // DrawFrame(render_pass); // FIXME: Render
 
   wgpuRenderPassEncoderEnd(render_pass);
   wgpuRenderPassEncoderRelease(render_pass);
 
   // ENCODE AND SUBMIT RENDER PASS
-  WGPUCommandBufferDescriptor cmd_buffer_desc = {
+  constexpr WGPUCommandBufferDescriptor cmd_buffer_desc = {
       .nextInChain = nullptr,
       .label = "The Command Buffer"_w,
   };

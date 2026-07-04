@@ -8,6 +8,7 @@
 #include <webgpu/webgpu.hpp>
 
 #include "../editor_windows/editor_window_manager.h"
+#include "../textures/texture.h"
 #include "device_window.h"
 
 constexpr WGPUColor kWindowClearColor = {100 / 255.0, 149 / 255.0, 237 / 255.0, 1};
@@ -20,8 +21,10 @@ private:
   WGPUDevice device_ = nullptr;
   WGPUQueue queue_ = nullptr;
   WGPUSurface surface_ = nullptr;
+
   DeviceWindow window_{&surface_};
   EditorWindowManager window_manager_{};
+  TextureManager texture_manager_{};
 
   WGPUTextureFormat preferred_format_ = WGPUTextureFormat_Undefined;
 
@@ -54,6 +57,8 @@ public:
    */
   [[nodiscard]] bool ShouldContinue() const noexcept;
   [[nodiscard]] WGPUSurfaceConfiguration BuildSurfaceConfig(const DeviceWindow &window) const;
+
+  const TextureManager &GetTextureManager() { return texture_manager_; }
 };
 
 #endif // APPLICATION_H

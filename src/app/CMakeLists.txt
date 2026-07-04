@@ -12,10 +12,12 @@ add_executable(App main.cc
         application/device_window.cc
         editor_windows/custom_windows.h
         editor_windows/custom_windows.cc
+        textures/texture.cc
+        textures/texture.h
 )
 
 target_link_libraries(App PRIVATE Engine)
-target_link_libraries(App PRIVATE glfw webgpu glfw3webgpu imgui implot)
+target_link_libraries(App PRIVATE glfw webgpu glfw3webgpu imgui implot stb_img)
 
 # Automatically copy resource files to build directory
 target_compile_definitions(App PRIVATE

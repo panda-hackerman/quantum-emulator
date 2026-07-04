@@ -18,7 +18,7 @@ struct CTEntry {
   ValType val;
 };
 
-//TODO: Solution without runtime overhead? Does it matter?
+// TODO: Solution without runtime overhead? Does it matter?
 
 /// A map whose elements are known at compile-time.
 template <typename KeyType, typename ValType, std::size_t N>
@@ -50,7 +50,7 @@ public:
 
   [[nodiscard]] constexpr const ValType &Get(KeyType key) const {
     if (!Contains(key)) {
-      return XInvalidKey();
+      XInvalidKey();
     }
 
     for (std::size_t i = 0; i < N; ++i) {
@@ -62,9 +62,7 @@ public:
     std::unreachable();
   }
 
-  [[nodiscard]] constexpr std::size_t Size() const noexcept {
-    return entries_.size();
-  }
+  [[nodiscard]] constexpr std::size_t Size() const noexcept { return entries_.size(); }
 
   [[nodiscard]] constexpr const ValType &operator[](KeyType key) const { return Get(key); }
 

@@ -8,6 +8,7 @@
 #include <iostream>
 #include <utility>
 
+#include "../application/application.h"
 #include "imgui.h"
 #include "implot.h"
 #include "simulator/simulator.h"
@@ -56,7 +57,18 @@ void CircuitEditor::Draw() {
         ImGui::TableSetColumnIndex(layer + 1);
 
         const GateButton *gate_button = buttons_arr_[qubit][layer];
-        ImGui::Button(gate_button->name, GetCircuitButtonSize());
+
+        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
+        if (gate_button->sprite_id != SpriteID::kUndefined) {
+          const Texture *texture = Application::Instance().GetTextureManager().GetTexture(TextureID::kCircuit);
+          const Sprite &sprite = kIdToSpriteMap.Get(gate_button->sprite_id);
+
+          ImGui::ImageButton(gate_button->name, texture->GetViewRef(), GetCircuitButtonSize(),
+                             sprite.GetUV1(texture->Size()), sprite.GetUV2(texture->Size()));
+        } else {
+          ImGui::Button(gate_button->name, GetCircuitButtonSize());
+        }
+        ImGui::PopStyleVar();
 
         // DRAG AND DROP / SOURCE
         if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)) {
@@ -115,7 +127,7 @@ void CircuitEditor::Set(const Circuit::GridSize_T qubit, const Circuit::GridSize
                         const GateButton *button) {
   if (circuit_ == nullptr) return;
 
-  switch (button->part_type) {
+  switch (button->part) {
     case Circuit::Part::kEmpty:
       circuit_->AddEmpty(qubit, layer);
       break;
@@ -153,7 +165,7 @@ void CircuitEditor::ReadFromCircuit() {
 
       bool set = false;
       for (const GateButton *button : gate::kKnownGates) {
-        if (part_type == button->part_type && button->MatrixMatches(matrix)) {
+        if (part_type == button->part && button->MatrixMatches(matrix)) {
           buttons_arr_[qubit][layer] = button;
           set = true;
           break;

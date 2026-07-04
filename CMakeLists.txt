@@ -22,6 +22,7 @@ add_subdirectory(vendor/webgpu)
 add_subdirectory(vendor/glfw3webgpu)
 add_subdirectory(vendor/imgui)
 add_subdirectory(vendor/implot)
+add_subdirectory(vendor/stb_image)
 
 if (TEST_BUILD)
     set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
