@@ -134,6 +134,7 @@ This project is licensed under the Unlicense ([unlicense.org](https://unlicense.
 
 This project uses the following third-party libraries:
 - [Dear ImGUI](https://github.com/ocornut/imgui) ([MIT License](https://github.com/ocornut/imgui/blob/master/LICENSE.txt))
+- [ImPlot](https://github.com/epezent/implot) ([MIT License](https://github.com/epezent/implot/blob/master/LICENSE))
 - [GLFW](https://github.com/glfw/glfw) ([Zlib License](https://github.com/glfw/glfw/blob/master/LICENSE.md))
 - [GLFW WebGPU Extension](https://github.com/eliemichel/glfw3webgpu) ([MIT License](https://github.com/eliemichel/glfw3webgpu/blob/main/LICENSE.txt))
 - [Google Test](https://github.com/google/googletest) ([BSD 3-Clause "New" or "Revised" License](https://github.com/google/googletest/blob/main/LICENSE))
