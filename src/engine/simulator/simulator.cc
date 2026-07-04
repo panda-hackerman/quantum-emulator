@@ -116,7 +116,7 @@ Matrix2D<Complex> ComputeLayerExplicit(const std::vector<Circuit::Part> &parts,
   }
 
   // We initialize to the 1x1 identity matrix = [1]
-  Matrix2D<std::complex<float>> out_matrix{1, 1};
+  Matrix2D<Complex> out_matrix{1, 1};
   out_matrix.At(0, 0) = 1;
 
   // Number of qubits
