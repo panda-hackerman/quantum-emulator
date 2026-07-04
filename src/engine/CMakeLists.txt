@@ -11,6 +11,7 @@ add_library(Engine
         types.h
         math/constants.h
         simulator/simulator.cc
+        math/constexpr_math.h
 )
 
 target_include_directories(Engine PUBLIC

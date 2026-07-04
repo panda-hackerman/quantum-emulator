@@ -10,6 +10,7 @@
 
 #include "collections/sparse_set.h"
 #include "math/constants.h"
+#include "math/constexpr_math.h"
 
 class Circuit {
 public:

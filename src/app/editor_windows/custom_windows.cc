@@ -9,6 +9,7 @@
 #include <utility>
 
 #include "imgui.h"
+#include "implot.h"
 #include "simulator/simulator.h"
 
 void CircuitEditor::Draw() {
@@ -201,10 +202,38 @@ void CircuitPalette::Draw() {
 }
 
 void CircuitInfoPanel::Draw() {
-  ImGui::Text("Probabilities:");
+  ImGui::Checkbox("Skip outputs with 0 probability", &data.skip_empty_probs);
 
   if (*circuit_dirty_ == true || info_str_.empty()) {
     RecomputeInfo();
+  }
+
+  if (ImPlot::BeginPlot("Probability Distribution:", {-1, 0},
+                        ImPlotFlags_Equal | ImPlotFlags_NoLegend)) {
+
+    std::vector<const char *> x_axis_labels;
+    std::vector<double> probabilities;
+
+    std::vector<double> positions;
+    double next_pos = 0;
+
+    for (int i = 0; i < plot_labels_.size(); ++i) {
+      if (data.skip_empty_probs && plot_probs_[i] == 0) continue;
+
+      x_axis_labels.emplace_back(plot_labels_[i].data()); // Ignore error, compiles fine :P
+      probabilities.push_back(plot_probs_[i]);
+
+      positions.push_back(next_pos++);
+    }
+
+    const int groups_size = static_cast<int>(positions.size());
+
+    ImPlot::SetupAxes("Output", "Probability", ImPlotAxisFlags_AutoFit, ImPlotAxisFlags_AutoFit);
+    ImPlot::SetupAxisLimits(ImAxis_Y1, 0, 1, ImGuiCond_Always);
+    ImPlot::SetupAxisTicks(ImAxis_X1, positions.data(), groups_size, x_axis_labels.data());
+    ImPlot::PlotBars("", probabilities.data(), groups_size, 0.8, 0);
+
+    ImPlot::EndPlot();
   }
 
   ImGui::Text("%s", info_str_.data());
@@ -212,29 +241,30 @@ void CircuitInfoPanel::Draw() {
 
 void CircuitInfoPanel::RecomputeInfo() {
 
+  state_vector_ = SimulateCircuitQubitWise(*circuit_);
+
   const Circuit::GridSize_T num_qubits = circuit_->GetNumQubits();
-  const std::vector<Complex> state_vector = SimulateCircuitQubitWise(*circuit_);
   const int state_vector_size = 1 << num_qubits;
 
-  if (state_vector.size() != state_vector_size) {
-    info_str_ = "[ERROR]";
+  if (state_vector_.size() != state_vector_size) {
     std::cerr << "Invalid state vector size; must be 2^n for n qubits." << std::endl;
     return;
   }
 
-  info_str_ = "";
+  plot_labels_.clear();
+  plot_probs_.clear();
 
   for (int i = state_vector_size - 1; i >= 0; --i) {
-    const Complex &complex = state_vector[i];
-
-    if (complex == Complex{0, 0}) continue; // Skip zero
+    const Complex &complex = state_vector_[i];
+    const double probability = std::pow(std::abs(complex), 2);
 
     // Convert decimal -> binary
-    std::string bit_string = std::bitset<sizeof(num_qubits) * 8>(i).to_string();
+    std::string bit_string = Bitset(i).to_string();
     bit_string = bit_string.substr(bit_string.size() - num_qubits);
     std::ranges::reverse(bit_string);
 
-    info_str_ += bit_string + ": " + PrettyPrint(complex) + '\n';
+    plot_labels_.push_back(bit_string);
+    plot_probs_.push_back(probability);
   }
 
   *circuit_dirty_ = false;

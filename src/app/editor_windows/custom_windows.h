@@ -5,6 +5,8 @@
 #ifndef CUSTOM_WINDOWS_H
 #define CUSTOM_WINDOWS_H
 
+#include <bitset>
+
 #include "imgui.h"
 #include "math/constants.h"
 #include "quantum_circuit/circuit.h"
@@ -85,11 +87,22 @@ public:
 
 class CircuitInfoPanel {
 private:
+  using Bitset = std::bitset<Circuit::kMaxQubits>;
+
   Circuit *circuit_;
   bool *circuit_dirty_;
   std::string info_str_;
 
+  std::vector<Complex> state_vector_;
+
+  std::vector<std::string> plot_labels_;
+  std::vector<double> plot_probs_;
+
 public:
+  struct {
+    bool skip_empty_probs = true;
+  } data;
+
   explicit CircuitInfoPanel(Circuit *circuit, bool *circuit_dirty) :
       circuit_{circuit}, circuit_dirty_{circuit_dirty} {}
 

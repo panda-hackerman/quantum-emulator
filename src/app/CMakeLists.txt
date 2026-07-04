@@ -15,7 +15,7 @@ add_executable(App main.cc
 )
 
 target_link_libraries(App PRIVATE Engine)
-target_link_libraries(App PRIVATE glfw webgpu glfw3webgpu imgui)
+target_link_libraries(App PRIVATE glfw webgpu glfw3webgpu imgui implot)
 
 # Automatically copy resource files to build directory
 target_compile_definitions(App PRIVATE

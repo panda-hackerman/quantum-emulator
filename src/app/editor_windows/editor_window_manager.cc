@@ -10,6 +10,7 @@
 
 #include "custom_windows.h"
 #include "imgui_internal.h"
+#include "implot.h"
 #include "quantum_circuit/circuit.h"
 
 void EditorWindowManager::Init() {
@@ -17,6 +18,7 @@ void EditorWindowManager::Init() {
 
   IMGUI_CHECKVERSION();
   ImGui::CreateContext();
+  ImPlot::CreateContext();
 
   SetImGuiStyle();
 
@@ -45,6 +47,7 @@ void EditorWindowManager::Terminate() {
   if (is_initialized_) return;
 
   ImGui::DestroyContext();
+  ImPlot::DestroyContext();
 
   is_initialized_ = false;
 }
