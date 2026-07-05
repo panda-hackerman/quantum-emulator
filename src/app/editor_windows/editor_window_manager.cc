@@ -98,7 +98,7 @@ void EditorWindowManager::DrawWindows() {
     ImGui::End();
   }
 
-  ImGui::ShowDemoWindow();
+  // ImGui::ShowDemoWindow();
   // ImGui::ShowDebugLogWindow();
 }
 
