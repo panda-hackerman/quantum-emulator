@@ -3,7 +3,7 @@ add_executable(App main.cc
         util/device_adapter_util.h
         util/wgpu_string_view_util.h
         util/sleep_util.h
-        util/settings_constants.h
+        settings_constants.h
         application/application.cc
         application/application.h
         editor_windows/editor_window_manager.cc
@@ -14,6 +14,7 @@ add_executable(App main.cc
         editor_windows/custom_windows.cc
         textures/texture.cc
         textures/texture.h
+        theme.h
 )
 
 target_link_libraries(App PRIVATE Engine)

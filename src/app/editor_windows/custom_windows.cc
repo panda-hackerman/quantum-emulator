@@ -20,6 +20,8 @@ void CircuitEditor::Draw() {
   ImGui::InputInt("Layers", &data.num_layers);
   ImGui::PopItemWidth();
 
+  const TextureManager &texture_manager = Application::Instance().GetTextureManager();
+
   // Update Size
   UpdateCircuitSize();
 
@@ -57,26 +59,39 @@ void CircuitEditor::Draw() {
         ImGui::TableSetColumnIndex(layer + 1);
 
         const GateButton *gate_button = buttons_arr_[qubit][layer];
+        const ImVec2 button_size = GetCircuitButtonSize();
 
-        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
         if (gate_button->sprite_id != SpriteID::kUndefined) {
-          const Texture *texture = Application::Instance().GetTextureManager().GetTexture(TextureID::kCircuit);
+          ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.f, 0.f, 0.f, 0.f));
+          ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.f, 0.f, 0.f, 0.f));
+          ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.f, 0.f, 0.f, 0.f));
+          ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
+          const Texture *texture = texture_manager.GetTexture(TextureID::kCircuit);
           const Sprite &sprite = kIdToSpriteMap.Get(gate_button->sprite_id);
+          ImVec2 uv_1 = sprite.GetUV1(texture->Size());
+          ImVec2 uv_2 = sprite.GetUV2(texture->Size());
 
-          ImGui::ImageButton(gate_button->name, texture->GetViewRef(), GetCircuitButtonSize(),
-                             sprite.GetUV1(texture->Size()), sprite.GetUV2(texture->Size()));
+          ImGui::ImageButton(gate_button->name, texture->GetViewRef(), button_size, uv_1, uv_2);
+          ImGui::PopStyleVar();
+          ImGui::PopStyleColor(3);
         } else {
-          ImGui::Button(gate_button->name, GetCircuitButtonSize());
+          ImGui::Button(gate_button->name, button_size);
         }
-        ImGui::PopStyleVar();
 
         // DRAG AND DROP / SOURCE
-        if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)) {
-          GateSwapPayload payload = {qubit, layer};
+        if (gate_button->part != Circuit::Part::kEmpty) {
+          if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)) {
+            GateSwapPayload payload = {qubit, layer};
 
-          ImGui::SetDragDropPayload("BUTTON_SWAP", &payload, sizeof(payload));
-          ImGui::Text("%s", "Move gate");
-          ImGui::EndDragDropSource();
+            ImGui::SetDragDropPayload("BUTTON_SWAP", &payload, sizeof(payload));
+            ImGui::Text("%s", "Move gate");
+            ImGui::EndDragDropSource();
+          }
+
+          // Set mouse cursor
+          if (ImGui::IsItemHovered()) {
+            ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
+          }
         }
 
         // DRAG AND DROP / TARGET
@@ -221,7 +236,7 @@ void CircuitInfoPanel::Draw() {
   }
 
   if (ImPlot::BeginPlot("Probability Distribution:", {-1, 0},
-                        ImPlotFlags_Equal | ImPlotFlags_NoLegend)) {
+                        ImPlotFlags_Equal | ImPlotFlags_NoLegend | ImPlotFlags_NoMouseText)) {
 
     std::vector<const char *> x_axis_labels;
     std::vector<double> probabilities;

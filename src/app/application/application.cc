@@ -9,8 +9,8 @@
 
 #include <iostream>
 
+#include "../settings_constants.h"
 #include "../util/device_adapter_util.h"
-#include "../util/settings_constants.h"
 #include "../util/wgpu_string_view_util.h"
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_wgpu.h"
