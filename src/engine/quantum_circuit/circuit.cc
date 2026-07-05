@@ -57,6 +57,11 @@ void Circuit::SetSize(const GridSize_T num_qubits, const GridSize_T num_layers) 
   num_layers_ = num_layers;
 }
 
+void Circuit::Clear() {
+  parts_array_.fill(Part::kEmpty);
+  id_to_matrix_.Clear();
+}
+
 Circuit::Part Circuit::GetPartTypeAt(const GridSize_T qubit, const GridSize_T layer) const {
   AssertInLimit(qubit, layer);
   return GetPartTypeUnsafe(qubit, layer);

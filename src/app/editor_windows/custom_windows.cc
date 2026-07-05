@@ -13,17 +13,24 @@
 #include "implot.h"
 #include "simulator/simulator.h"
 
+/* --------------- CIRCUIT EDITOR ---------------*/
+
 void CircuitEditor::Draw() {
+  const TextureManager &texture_manager = Application::Instance().GetTextureManager();
+
   ImGui::PushItemWidth(ImGui::GetFontSize() * 6);
   ImGui::InputInt("Qubits", &data.num_qubits);
   ImGui::SameLine();
   ImGui::InputInt("Layers", &data.num_layers);
   ImGui::PopItemWidth();
 
-  const TextureManager &texture_manager = Application::Instance().GetTextureManager();
-
   // Update Size
   UpdateCircuitSize();
+
+  ImGui::SameLine();
+  if (ImGui::Button("Clear Circuit")) {
+    ClearCircuit();
+  }
 
   // Table
   constexpr ImGuiTableFlags table_flags =
@@ -122,6 +129,18 @@ void CircuitEditor::Draw() {
   }
 }
 
+void CircuitEditor::ClearCircuit() {
+  circuit_->Clear();
+
+  for (Circuit::GridSize_T qubit = 0; qubit < Circuit::kMaxQubits; ++qubit) {
+    for (Circuit::GridSize_T layer = 0; layer < Circuit::kMaxDepth; ++layer) {
+      buttons_arr_[qubit][layer] = &gate::kEmpty;
+    }
+  }
+
+  *circuit_dirty_ = true;
+}
+
 void CircuitEditor::UpdateCircuitSize() {
   int &qubits = data.num_qubits;
   int &layers = data.num_layers;
@@ -198,8 +217,12 @@ void CircuitEditor::ReadFromCircuit() {
   }
 }
 
+/* --------------- CIRCUIT PALETTE ---------------*/
+
 void CircuitPalette::Draw() {
   const ImGuiStyle &style = ImGui::GetStyle();
+  const TextureManager &texture_manager = Application::Instance().GetTextureManager();
+
   const float window_visible_x2 = ImGui::GetCursorScreenPos().x + ImGui::GetContentRegionAvail().x;
   const ImVec2 button_size = GetCircuitButtonSize();
 
@@ -207,8 +230,25 @@ void CircuitPalette::Draw() {
   for (int i = 0; std::cmp_less(i, num_gates); ++i) {
     ImGui::PushID(i);
 
-    const GateButton *elem = gate::kKnownGates[i];
-    ImGui::Button(elem->name, button_size);
+    const GateButton *gate_button = gate::kKnownGates[i];
+    // ImGui::Button(gate_button->name, button_size);
+
+    if (gate_button->sprite_id != SpriteID::kUndefined) {
+      ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.f, 0.f, 0.f, 0.f));
+      ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.f, 0.f, 0.f, 0.f));
+      ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.f, 0.f, 0.f, 0.f));
+      ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
+      const Texture *texture = texture_manager.GetTexture(TextureID::kCircuit);
+      const Sprite &sprite = kIdToSpriteMap.Get(gate_button->sprite_id);
+      ImVec2 uv_1 = sprite.GetUV1(texture->Size());
+      ImVec2 uv_2 = sprite.GetUV2(texture->Size());
+
+      ImGui::ImageButton(gate_button->name, texture->GetViewRef(), button_size, uv_1, uv_2);
+      ImGui::PopStyleVar();
+      ImGui::PopStyleColor(3);
+    } else {
+      ImGui::Button(gate_button->name, button_size);
+    }
 
     const float last_button_x2 = ImGui::GetItemRectMax().x;
     const float next_button_x2 = last_button_x2 + style.ItemSpacing.x + button_size.x;
@@ -219,14 +259,20 @@ void CircuitPalette::Draw() {
 
     // DRAG AND DROP SOURCE
     if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)) {
-      ImGui::SetDragDropPayload("BUTTON_SET", &elem, sizeof(*elem));
+      ImGui::SetDragDropPayload("BUTTON_SET", &gate_button, sizeof(*gate_button));
       ImGui::Text("%s", "Set gate");
       ImGui::EndDragDropSource();
+    }
+
+    if (ImGui::IsItemHovered()) {
+      ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
     }
 
     ImGui::PopID();
   }
 }
+
+/* --------------- CIRCUIT INFO PANEL ---------------*/
 
 void CircuitInfoPanel::Draw() {
   ImGui::Checkbox("Skip outputs with 0 probability", &data.skip_empty_probs);
@@ -296,6 +342,8 @@ void CircuitInfoPanel::RecomputeInfo() {
 
   *circuit_dirty_ = false;
 }
+
+/* --------------- MISC ---------------*/
 
 ImVec2 GetCircuitButtonSize() {
   constexpr ImVec2 norm = {80, 80};

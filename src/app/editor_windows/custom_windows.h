@@ -78,6 +78,7 @@ public:
 
   void Draw();
   void UpdateCircuitSize();
+  void ClearCircuit();
   void Set(Circuit::GridSize_T qubit, Circuit::GridSize_T layer, const GateButton *button);
 
   void ReadFromCircuit();
