@@ -4,17 +4,23 @@
 
 #include "custom_windows.h"
 
+#include <bitset>
+#include <iostream>
 #include <utility>
 
+#include "../application/application.h"
 #include "imgui.h"
-#include "math/simulator.h"
+#include "implot.h"
+#include "simulator/simulator.h"
 
 void CircuitEditor::Draw() {
-  ImGui::PushItemWidth(80);
+  ImGui::PushItemWidth(ImGui::GetFontSize() * 6);
   ImGui::InputInt("Qubits", &data.num_qubits);
   ImGui::SameLine();
   ImGui::InputInt("Layers", &data.num_layers);
   ImGui::PopItemWidth();
+
+  const TextureManager &texture_manager = Application::Instance().GetTextureManager();
 
   // Update Size
   UpdateCircuitSize();
@@ -53,15 +59,39 @@ void CircuitEditor::Draw() {
         ImGui::TableSetColumnIndex(layer + 1);
 
         const GateButton *gate_button = buttons_arr_[qubit][layer];
-        ImGui::Button(gate_button->name, ImVec2{60, 60});
+        const ImVec2 button_size = GetCircuitButtonSize();
+
+        if (gate_button->sprite_id != SpriteID::kUndefined) {
+          ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.f, 0.f, 0.f, 0.f));
+          ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.f, 0.f, 0.f, 0.f));
+          ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.f, 0.f, 0.f, 0.f));
+          ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
+          const Texture *texture = texture_manager.GetTexture(TextureID::kCircuit);
+          const Sprite &sprite = kIdToSpriteMap.Get(gate_button->sprite_id);
+          ImVec2 uv_1 = sprite.GetUV1(texture->Size());
+          ImVec2 uv_2 = sprite.GetUV2(texture->Size());
+
+          ImGui::ImageButton(gate_button->name, texture->GetViewRef(), button_size, uv_1, uv_2);
+          ImGui::PopStyleVar();
+          ImGui::PopStyleColor(3);
+        } else {
+          ImGui::Button(gate_button->name, button_size);
+        }
 
         // DRAG AND DROP / SOURCE
-        if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)) {
-          GateSwapPayload payload = {qubit, layer};
+        if (gate_button->part != Circuit::Part::kEmpty) {
+          if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)) {
+            GateSwapPayload payload = {qubit, layer};
 
-          ImGui::SetDragDropPayload("BUTTON_SWAP", &payload, sizeof(payload));
-          ImGui::Text("%s", "Move gate");
-          ImGui::EndDragDropSource();
+            ImGui::SetDragDropPayload("BUTTON_SWAP", &payload, sizeof(payload));
+            ImGui::Text("%s", "Move gate");
+            ImGui::EndDragDropSource();
+          }
+
+          // Set mouse cursor
+          if (ImGui::IsItemHovered()) {
+            ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
+          }
         }
 
         // DRAG AND DROP / TARGET
@@ -112,7 +142,7 @@ void CircuitEditor::Set(const Circuit::GridSize_T qubit, const Circuit::GridSize
                         const GateButton *button) {
   if (circuit_ == nullptr) return;
 
-  switch (button->part_type) {
+  switch (button->part) {
     case Circuit::Part::kEmpty:
       circuit_->AddEmpty(qubit, layer);
       break;
@@ -150,7 +180,7 @@ void CircuitEditor::ReadFromCircuit() {
 
       bool set = false;
       for (const GateButton *button : gate::kKnownGates) {
-        if (part_type == button->part_type && button->MatrixMatches(matrix)) {
+        if (part_type == button->part && button->MatrixMatches(matrix)) {
           buttons_arr_[qubit][layer] = button;
           set = true;
           break;
@@ -171,16 +201,17 @@ void CircuitEditor::ReadFromCircuit() {
 void CircuitPalette::Draw() {
   const ImGuiStyle &style = ImGui::GetStyle();
   const float window_visible_x2 = ImGui::GetCursorScreenPos().x + ImGui::GetContentRegionAvail().x;
+  const ImVec2 button_size = GetCircuitButtonSize();
 
   constexpr std::size_t num_gates = gate::kKnownGates.size();
   for (int i = 0; std::cmp_less(i, num_gates); ++i) {
     ImGui::PushID(i);
 
     const GateButton *elem = gate::kKnownGates[i];
-    ImGui::Button(elem->name, kButtonSize);
+    ImGui::Button(elem->name, button_size);
 
     const float last_button_x2 = ImGui::GetItemRectMax().x;
-    const float next_button_x2 = last_button_x2 + style.ItemSpacing.x + kButtonSize.x;
+    const float next_button_x2 = last_button_x2 + style.ItemSpacing.x + button_size.x;
 
     if ((i < num_gates - 1) && next_button_x2 < window_visible_x2) {
       ImGui::SameLine();
@@ -198,10 +229,38 @@ void CircuitPalette::Draw() {
 }
 
 void CircuitInfoPanel::Draw() {
-  ImGui::Text("Circuit Info:");
+  ImGui::Checkbox("Skip outputs with 0 probability", &data.skip_empty_probs);
 
   if (*circuit_dirty_ == true || info_str_.empty()) {
     RecomputeInfo();
+  }
+
+  if (ImPlot::BeginPlot("Probability Distribution:", {-1, 0},
+                        ImPlotFlags_Equal | ImPlotFlags_NoLegend | ImPlotFlags_NoMouseText)) {
+
+    std::vector<const char *> x_axis_labels;
+    std::vector<double> probabilities;
+
+    std::vector<double> positions;
+    double next_pos = 0;
+
+    for (int i = 0; i < plot_labels_.size(); ++i) {
+      if (data.skip_empty_probs && plot_probs_[i] == 0) continue;
+
+      x_axis_labels.emplace_back(plot_labels_[i].data()); // Ignore error, compiles fine :P
+      probabilities.push_back(plot_probs_[i]);
+
+      positions.push_back(next_pos++);
+    }
+
+    const int groups_size = static_cast<int>(positions.size());
+
+    ImPlot::SetupAxes("Output", "Probability", ImPlotAxisFlags_AutoFit, ImPlotAxisFlags_AutoFit);
+    ImPlot::SetupAxisLimits(ImAxis_Y1, 0, 1, ImGuiCond_Always);
+    ImPlot::SetupAxisTicks(ImAxis_X1, positions.data(), groups_size, x_axis_labels.data());
+    ImPlot::PlotBars("", probabilities.data(), groups_size, 0.8, 0);
+
+    ImPlot::EndPlot();
   }
 
   ImGui::Text("%s", info_str_.data());
@@ -209,16 +268,38 @@ void CircuitInfoPanel::Draw() {
 
 void CircuitInfoPanel::RecomputeInfo() {
 
-  const auto parts = circuit_->GetPartsInLayer(0);
-  const auto matrices = circuit_->GetMatricesInLayer(0);
+  state_vector_ = SimulateCircuitQubitWise(*circuit_);
 
-  const Matrix2D<std::complex<float>> data = ComputeLayer(parts, matrices);
+  const Circuit::GridSize_T num_qubits = circuit_->GetNumQubits();
+  const int state_vector_size = 1 << num_qubits;
 
-  std::ostringstream oss;
+  if (state_vector_.size() != state_vector_size) {
+    std::cerr << "Invalid state vector size; must be 2^n for n qubits." << std::endl;
+    return;
+  }
 
-  data.Print(oss);
+  plot_labels_.clear();
+  plot_probs_.clear();
 
-  info_str_ = oss.str();
+  for (int i = state_vector_size - 1; i >= 0; --i) {
+    const Complex &complex = state_vector_[i];
+    const double probability = std::pow(std::abs(complex), 2);
+
+    // Convert decimal -> binary
+    std::string bit_string = Bitset(i).to_string();
+    bit_string = bit_string.substr(bit_string.size() - num_qubits);
+    std::ranges::reverse(bit_string);
+
+    plot_labels_.push_back(bit_string);
+    plot_probs_.push_back(probability);
+  }
 
   *circuit_dirty_ = false;
+}
+
+ImVec2 GetCircuitButtonSize() {
+  constexpr ImVec2 norm = {80, 80};
+  const float factor = ImGui::GetFontSize() / 13;
+
+  return {norm.x * factor, norm.y * factor};
 }

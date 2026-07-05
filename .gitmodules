@@ -4,6 +4,9 @@
 [submodule "vendor/imgui"]
 	path = vendor/imgui
 	url = https://github.com/panda-hackerman/imgui.git
+[submodule "vendor/implot"]
+	path = vendor/implot
+	url = https://github.com/panda-hackerman/implot
 [submodule "vendor/webgpu"]
 	path = vendor/webgpu
 	url = https://github.com/eliemichel/WebGPU-distribution.git

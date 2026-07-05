@@ -4,14 +4,18 @@
 
 #ifndef CUSTOM_WINDOWS_H
 #define CUSTOM_WINDOWS_H
-#include <iostream>
 
+#include <bitset>
+
+#include "../textures/texture.h"
 #include "imgui.h"
+#include "math/constants.h"
 #include "quantum_circuit/circuit.h"
 
 struct GateButton {
   const char *name = nullptr;
-  Circuit::Part part_type = Circuit::Part::kEmpty;
+  Circuit::Part part = Circuit::Part::kEmpty;
+  const SpriteID sprite_id = SpriteID::kUndefined;
   const Circuit::Matrix_T *matrix = nullptr;
 
   constexpr bool MatrixMatches(const Circuit::Matrix_T *other) const {
@@ -25,20 +29,21 @@ struct GateButton {
   }
 };
 
+/// Preset gate types
 namespace gate { /// Default gates
 inline constexpr GateButton kEmpty = {"", Circuit::Part::kEmpty};
 
-inline constexpr GateButton kControlBit = {"*", Circuit::Part::kControlBit};
-inline constexpr GateButton kAntiControlBit = {"!*", Circuit::Part::kAntiControlBit};
-inline constexpr GateButton kMeasurementGate = {"%", Circuit::Part::kMeasure};
-inline constexpr GateButton kSwapGate = {"-x-", Circuit::Part::kSwap};
+inline constexpr GateButton kControlBit = {"Control", Circuit::Part::kControlBit, SpriteID::kCircuitControl};
+inline constexpr GateButton kAntiControlBit = {"Anti-Control", Circuit::Part::kAntiControlBit, SpriteID::kCircuitAntiControl};
+inline constexpr GateButton kMeasurementGate = {"Measurement", Circuit::Part::kMeasure, SpriteID::kCircuitMeasure};
+inline constexpr GateButton kSwapGate = {"Swap", Circuit::Part::kSwap, SpriteID::kCircuitSwap};
 
-inline constexpr GateButton kIdentity = {"I", Circuit::Part::kMatrix2x2, &matrix::kIdentity};
-inline constexpr GateButton kPauliX = {"X", Circuit::Part::kMatrix2x2, &matrix::kPauliX};
-inline constexpr GateButton kPauliY = {"Y", Circuit::Part::kMatrix2x2, &matrix::kPauliY};
-inline constexpr GateButton kPauliZ = {"Z", Circuit::Part::kMatrix2x2, &matrix::kPauliZ};
-inline constexpr GateButton kHadamard = {"H", Circuit::Part::kMatrix2x2, &matrix::kHadamard};
-inline constexpr GateButton kTGate = {"T", Circuit::Part::kMatrix2x2, &matrix::kPi8ths};
+inline constexpr GateButton kIdentity = {"Identity", Circuit::Part::kMatrix2x2, SpriteID::kCircuitIdentity, &matrix::kIdentity};
+inline constexpr GateButton kPauliX = {"Pauli X", Circuit::Part::kMatrix2x2, SpriteID::kCircuitPauliX, &matrix::kPauliX};
+inline constexpr GateButton kPauliY = {"Pauli Y", Circuit::Part::kMatrix2x2, SpriteID::kCircuitPauliY, &matrix::kPauliY};
+inline constexpr GateButton kPauliZ = {"Pauli Z", Circuit::Part::kMatrix2x2, SpriteID::kCircuitPauliZ, &matrix::kPauliZ};
+inline constexpr GateButton kHadamard = {"Hadamard", Circuit::Part::kMatrix2x2, SpriteID::kCircuitHadamard, &matrix::kHadamard};
+inline constexpr GateButton kTGate = {"T Gate", Circuit::Part::kMatrix2x2, SpriteID::kCircuitTGate, &matrix::kPi8ths};
 
 inline constexpr auto kKnownGates = std::array{
     &kEmpty,  &kControlBit, &kAntiControlBit, &kMeasurementGate, &kSwapGate, &kIdentity,
@@ -80,23 +85,34 @@ public:
 
 class CircuitPalette {
 public:
-  static constexpr ImVec2 kButtonSize{60, 60};
-
   void Draw();
 };
 
 class CircuitInfoPanel {
 private:
+  using Bitset = std::bitset<Circuit::kMaxQubits>;
+
   Circuit *circuit_;
   bool *circuit_dirty_;
   std::string info_str_;
 
+  std::vector<Complex> state_vector_;
+
+  std::vector<std::string> plot_labels_;
+  std::vector<double> plot_probs_;
+
 public:
+  struct {
+    bool skip_empty_probs = true;
+  } data;
+
   explicit CircuitInfoPanel(Circuit *circuit, bool *circuit_dirty) :
       circuit_{circuit}, circuit_dirty_{circuit_dirty} {}
 
   void Draw();
   void RecomputeInfo();
 };
+
+ImVec2 GetCircuitButtonSize();
 
 #endif // CUSTOM_WINDOWS_H

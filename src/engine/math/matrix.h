@@ -1,12 +1,12 @@
-//
-// Created by Eli Michaud on 6/13/2026.
-//
-
-/* Contents of this file:
- * - Class Definitions:
- *   - IMatrix2D
- *   - MatrixDataType
- *   - Matrix2D
+/**
+ * @file matrix.h
+ *
+ * @brief Classes for representing matrices.
+ * @details Class definition and implementation of a 2D Matrix, including common operations.
+ *
+ * @author Eli Michaud
+ * @since 6/13/2026
+ *
  */
 
 #ifndef MATRIX_H
@@ -15,7 +15,6 @@
 #include <algorithm>
 #include <array>
 #include <iomanip>
-#include <ranges>
 #include <span>
 #include <stdexcept>
 #include <vector>
@@ -28,17 +27,6 @@
 /// Relating to matrices
 namespace matrix {
 inline constexpr std::size_t kDynamicSize = 0;
-
-/// Convert a 2D array into a flat (1D) array.
-template <typename T, std::size_t R, std::size_t C>
-static constexpr std::array<T, R * C> Flatten2D(const std::array<std::array<T, C>, R> &entries) {
-  auto r = std::ranges::join_view(entries);
-
-  return [&]<std::size_t... Is>(std::index_sequence<Is...>) -> std::array<T, R * C> {
-    auto it = std::ranges::begin(r);
-    return {(Is, *it++)...};
-  }(std::make_index_sequence<R * C>{});
-}
 
 // NOLINTBEGIN(*-identifier-naming)
 
@@ -284,7 +272,7 @@ public:
 
   constexpr explicit(false) Matrix2D(const std::array<std::array<Type, Cols>, Rows> &entries = {})
     requires(!kIsDynamic)
-      : DataHolderType{matrix::Flatten2D(entries)} {}
+      : DataHolderType{tmp::Flatten2D(entries)} {}
 
   [[nodiscard]] constexpr std::size_t NumRows() const noexcept override {
     if constexpr (kIsDynamic)

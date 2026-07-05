@@ -5,9 +5,10 @@
 #include <gtest/gtest.h>
 
 #include "math/matrix.h"
+#include "types.h"
 
 TEST(MatrixTests, IsInitAtCorrectSize_Static) {
-  constexpr Matrix2D<std::complex<float>, 2, 3> matrix = {{{
+  constexpr Matrix2D<Complex, 2, 3> matrix = {{{
       {1, 2, 3},
       {4, 5, 6},
   }}};

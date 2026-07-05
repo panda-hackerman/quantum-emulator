@@ -1,9 +1,15 @@
+# Ignore intellij stuff
 .idea
-#
+
+# Build directories
 /build/
 **/cmake-build-*/
 **/build-*/
 
+# Imgui config files
 **/imgui.ini
+
+# Ignore doxygen generated files
+/docs
 
 CMakeUserPresets.json

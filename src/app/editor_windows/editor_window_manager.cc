@@ -8,8 +8,10 @@
 
 #include <filesystem>
 
+#include "../theme.h"
 #include "custom_windows.h"
 #include "imgui_internal.h"
+#include "implot.h"
 #include "quantum_circuit/circuit.h"
 
 void EditorWindowManager::Init() {
@@ -17,15 +19,9 @@ void EditorWindowManager::Init() {
 
   IMGUI_CHECKVERSION();
   ImGui::CreateContext();
-  ImGui::StyleColorsDark();
+  ImPlot::CreateContext();
 
-  // TODO: Move to dedicated style builder/ file
-  ImGuiStyle &style = ImGui::GetStyle();
-  style.TabRounding = 8.f;
-  style.FrameRounding = 8.f;
-  style.GrabRounding = 8.f;
-  style.WindowRounding = 8.f;
-  style.PopupRounding = 8.f;
+  SetImGuiStyle();
 
   if constexpr (kImGuiIniPath != nullptr) {
     if (!std::filesystem::exists(kImGuiIniPath)) {
@@ -43,7 +39,7 @@ void EditorWindowManager::Init() {
   io.MouseDrawCursor = true; // Show mouse cursor on web platform
 #endif
 
-  ResetWindows();
+  SetupWindows();
 
   is_initialized_ = true;
 }
@@ -52,6 +48,7 @@ void EditorWindowManager::Terminate() {
   if (is_initialized_) return;
 
   ImGui::DestroyContext();
+  ImPlot::DestroyContext();
 
   is_initialized_ = false;
 }
@@ -101,10 +98,11 @@ void EditorWindowManager::DrawWindows() {
     ImGui::End();
   }
 
-  // ImGui::ShowDemoWindow();
+  ImGui::ShowDemoWindow();
+  // ImGui::ShowDebugLogWindow();
 }
 
-void EditorWindowManager::ResetWindows() {
+void EditorWindowManager::SetupWindows() {
   windows_.clear();
   circuit_ = Circuit::BuildExampleCircuit();
 
@@ -123,8 +121,123 @@ void EditorWindowManager::ResetWindows() {
   });
 
   windows_.emplace_back(EditorWindow{
-    .name = "Circuit Info",
-    .on_draw = [&]{ circuit_info_.Draw(); },
-    .can_close = false,
+      .name = "Circuit Info",
+      .on_draw = [&] { circuit_info_.Draw(); },
+      .can_close = false,
   });
+}
+
+void SetImGuiStyle() {
+  ImGuiIO *io = &ImGui::GetIO();
+  ImGuiStyle *style = &ImGui::GetStyle();
+  ImVec4 *colors = style->Colors;
+
+  // Font
+  // io->Fonts->AddFontDefaultVector(); // ProggyForever font
+  io->Fonts->AddFontFromFileTTF(RESOURCE_DIR "/fonts/cmr10.ttf", theme::kFontSize);
+
+  // DPI Aware
+  io->ConfigDpiScaleFonts = true;
+  io->ConfigDpiScaleViewports = true;
+
+  // Set Theme
+  ImGui::StyleColorsLight();
+
+  style->WindowPadding = theme::kWindowPadding;
+  style->WindowRounding = theme::kWindowRounding;
+  style->FramePadding = theme::kFramePadding;
+  style->FrameRounding = theme::kFrameRounding;
+  style->ItemSpacing = theme::kItemSpacing;
+  style->ItemInnerSpacing = theme::kItemInnerSpacing;
+  style->IndentSpacing = theme::kIndentSpacing;
+  style->ScrollbarSize = theme::kScrollbarSize;
+  style->ScrollbarRounding = theme::kScrollbarRounding;
+  style->GrabMinSize = theme::kGrabMinSize;
+  style->GrabRounding = theme::kGrabRounding;
+
+  // Set Colors
+  colors[ImGuiCol_Text] = theme::kBlackColor;
+  colors[ImGuiCol_TextDisabled] = WithTransparency(theme::kBlackColor, 0.60f);
+
+  colors[ImGuiCol_WindowBg] = theme::kWhiteColor;
+  colors[ImGuiCol_ChildBg] = theme::kTransparentColor;
+  colors[ImGuiCol_PopupBg] = WithTransparency(theme::kWhiteColor, 0.98f);
+
+  colors[ImGuiCol_Border] = WithTransparency(theme::kBlackColor, 0.30f);
+  colors[ImGuiCol_BorderShadow] = theme::kTransparentColor;
+
+  colors[ImGuiCol_FrameBg] = WithTransparency(theme::kBlack800Color, 0.40f);
+  colors[ImGuiCol_FrameBgHovered] = WithTransparency(theme::kGreenHighlightColor, 0.40f);
+  colors[ImGuiCol_FrameBgActive] = WithTransparency(theme::kGreenHighlightColor, 0.67f);
+
+  colors[ImGuiCol_TitleBg] = theme::kGreyColor_Dark;
+  colors[ImGuiCol_TitleBgActive] = theme::kGreyColor;
+  colors[ImGuiCol_TitleBgCollapsed] = WithTransparency(theme::kBlackColor, 0.51f);
+  colors[ImGuiCol_MenuBarBg] = WithTransparency(theme::kBlack800Color, 0.47f);
+
+  colors[ImGuiCol_ScrollbarBg] = theme::kWhiteColor_Darkest;
+  colors[ImGuiCol_ScrollbarGrab] = theme::kGreyColor;
+  colors[ImGuiCol_ScrollbarGrabHovered] = WithTransparency(theme::kBlueHighlightColor, 0.40f);
+  colors[ImGuiCol_ScrollbarGrabActive] = WithTransparency(theme::kBlueHighlightColor_Dark, 0.70f);
+
+  colors[ImGuiCol_CheckMark] = theme::kGreenHighlightColor;
+  colors[ImGuiCol_CheckboxSelectedBg] = theme::kGreyColor_Dark;
+
+  colors[ImGuiCol_SliderGrab] = WithTransparency(theme::kBlueHighlightColor, 0.78f);
+  colors[ImGuiCol_SliderGrabActive] = WithTransparency(theme::kBlueHighlightColor_Dark, 0.60f);
+
+  colors[ImGuiCol_Button] = WithTransparency(theme::kBlueHighlightColor, 0.30f);
+  colors[ImGuiCol_ButtonHovered] = WithTransparency(theme::kBlueHighlightColor, 0.60f);
+  colors[ImGuiCol_ButtonActive] = WithTransparency(theme::kBlueHighlightColor_Dark, 0.70f);
+
+  colors[ImGuiCol_Header] = WithTransparency(theme::kBlueHighlightColor, 0.20f);
+  colors[ImGuiCol_HeaderHovered] = WithTransparency(theme::kBlueHighlightColor, 0.40f);
+  colors[ImGuiCol_HeaderActive] = WithTransparency(theme::kBlueHighlightColor_Dark, 0.70f);
+
+  colors[ImGuiCol_Separator] = theme::kGreyColor_Darkest;
+  colors[ImGuiCol_SeparatorHovered] = WithTransparency(theme::kBlueHighlightColor, 0.57f);
+  colors[ImGuiCol_SeparatorActive] = WithTransparency(theme::kBlueHighlightColor_Dark, 0.60f);
+
+  colors[ImGuiCol_ResizeGrip] = theme::kGreyColor_Dark;
+  colors[ImGuiCol_ResizeGripHovered] = WithTransparency(theme::kBlueHighlightColor, 0.30f);
+  colors[ImGuiCol_ResizeGripActive] = WithTransparency(theme::kBlueHighlightColor_Dark, 0.40f);
+
+  colors[ImGuiCol_InputTextCursor] = colors[ImGuiCol_Text];
+
+  // clang-format off
+  colors[ImGuiCol_TabHovered] = colors[ImGuiCol_HeaderHovered];
+  colors[ImGuiCol_Tab] = ImLerp(colors[ImGuiCol_Header], colors[ImGuiCol_TitleBgActive], 0.90f);
+  colors[ImGuiCol_TabSelected] = ImLerp(colors[ImGuiCol_HeaderActive], colors[ImGuiCol_TitleBgActive], 0.60f);
+  colors[ImGuiCol_TabSelectedOverline] = colors[ImGuiCol_HeaderActive];
+  colors[ImGuiCol_TabDimmed] = ImLerp(colors[ImGuiCol_Tab], colors[ImGuiCol_TitleBg], 0.80f);
+  colors[ImGuiCol_TabDimmedSelected] = ImLerp(colors[ImGuiCol_TabSelected], colors[ImGuiCol_TitleBg], 0.40f);
+  colors[ImGuiCol_TabDimmedSelectedOverline] = WithTransparency(theme::kBlueHighlightColor, 0.0f);
+  // clang-format on
+
+  colors[ImGuiCol_DockingPreview] = WithTransparency(theme::kBlueHighlightColor, 0.14f);
+  colors[ImGuiCol_DockingEmptyBg] = theme::kGreyColor_Darkest;
+
+  colors[ImGuiCol_PlotLines] = theme::kGreyColor_Darkest;
+  colors[ImGuiCol_PlotLinesHovered] = theme::kRedHighlightColor;
+  colors[ImGuiCol_PlotHistogram] = theme::kTurquoiseHighlightColor;
+  colors[ImGuiCol_PlotHistogramHovered] = theme::kRedHighlightColor_Dark;
+
+  colors[ImGuiCol_TableHeaderBg] = theme::kWhiteColor_Darkest;
+  colors[ImGuiCol_TableBorderStrong] = theme::kGreyColor_Darkest;
+  colors[ImGuiCol_TableBorderLight] = theme::kGreyColor_Dark;
+  colors[ImGuiCol_TableRowBg] = theme::kTransparentColor;
+  colors[ImGuiCol_TableRowBgAlt] = WithTransparency(theme::kGreyColor_Dark, 0.09f);
+
+  colors[ImGuiCol_TextLink] = theme::kBlueHighlightColor;
+  colors[ImGuiCol_TextSelectedBg] = theme::kBlueHighlightColor_Dark;
+
+  colors[ImGuiCol_TreeLines] = colors[ImGuiCol_Border];
+  colors[ImGuiCol_DragDropTarget] = theme::kGreenHighlightColor_Dark;
+  colors[ImGuiCol_DragDropTargetBg] = WithTransparency(theme::kGreenHighlightColor, 0.20f);
+  colors[ImGuiCol_UnsavedMarker] = theme::kAbsoluteWhiteColor;
+
+  colors[ImGuiCol_NavCursor] = colors[ImGuiCol_HeaderHovered];
+  colors[ImGuiCol_NavWindowingHighlight] = WithTransparency(theme::kGreyColor_Dark, 0.70f);
+  colors[ImGuiCol_NavWindowingDimBg] = WithTransparency(theme::kGreyColor, 0.20f);
+  colors[ImGuiCol_ModalWindowDimBg] = WithTransparency(theme::kGreyColor, 0.35f);
 }
