@@ -9,14 +9,38 @@
 #include <utility>
 
 #include "../application/application.h"
+#include "../theme.h"
 #include "imgui.h"
+#include "imgui_internal.h"
 #include "implot.h"
 #include "simulator/simulator.h"
+
+/* --------------- MISC ---------------*/
+
+/**
+ * Scale a Vec2D by the current DPI.
+ * @param vec2 The size to scale
+ * @return A new ImVec2
+ */
+ImVec2 ScaleDPI(const ImVec2 vec2) {
+  const ImGuiViewport *viewport = ImGui::GetMainViewport();
+  const float dpi = viewport->DpiScale;
+
+  return {vec2.x * dpi, vec2.y * dpi};
+}
+
+float ScaleDPI(const float x) {
+  const ImGuiViewport *viewport = ImGui::GetMainViewport();
+  const float dpi = viewport->DpiScale;
+
+  return x * dpi;
+}
 
 /* --------------- CIRCUIT EDITOR ---------------*/
 
 void CircuitEditor::Draw() {
   const TextureManager &texture_manager = Application::Instance().GetTextureManager();
+  const ImGuiStyle *style = &ImGui::GetStyle();
 
   ImGui::PushItemWidth(ImGui::GetFontSize() * 6);
   ImGui::InputInt("Qubits", &data.num_qubits);
@@ -36,8 +60,12 @@ void CircuitEditor::Draw() {
   constexpr ImGuiTableFlags table_flags =
       ImGuiTableFlags_Borders | ImGuiTableFlags_NoHostExtendX | ImGuiTableFlags_SizingFixedFit;
 
+  const ImVec2 button_size = ScaleDPI(theme::kCircuitButtonDefaultSize);
+
   // Actually draw
   if (ImGui::BeginTable("Circuit Diagram", data.num_layers + 1, table_flags)) {
+
+    const ImGuiTable *table = ImGui::GetCurrentTable();
 
     // Setup Columns
     ImGui::TableSetupColumn("", ImGuiTableColumnFlags_NoReorder | ImGuiTableColumnFlags_NoResize);
@@ -52,12 +80,33 @@ void CircuitEditor::Draw() {
     // Loop over actual grid
     for (Circuit::GridSize_T qubit = 0; std::cmp_less(qubit, data.num_qubits); ++qubit) {
 
-      { // Column 0 (labels)
-        ImGui::PushID(qubit);
+      ImGui::PushID(qubit);
+
+      /* [COLUMN 0 - LABELS] */ {
         ImGui::TableNextRow();
         ImGui::TableSetColumnIndex(0);
         ImGui::AlignTextToFramePadding();
         ImGui::Text("q%d", qubit);
+      }
+
+      /* [DRAW HORIZONTAL LINES] */ {
+        const ImGuiTableColumn *column = &table->Columns[0];
+        const float min_x = table->OuterRect.Min.x; /* Left of table  */
+        const float max_x = table->OuterRect.Max.x; /* Right of table */
+        const float top_y = table->OuterRect.Max.y; /* Top of table   */
+        const float col_0_w = column->WidthGiven; /* Width of column 0 */ // FIXME: Fragile?
+        const float header_height = !table->IsUsingHeaders ? 0 : ImGui::TableGetHeaderRowHeight();
+        const float button_height =
+            button_size.y + (style->CellPadding.y * 2); /* Height w padding */
+
+        const float start_y = top_y + header_height + (button_size.y / 2) + style->CellPadding.y;
+        const float start_x = min_x + col_0_w + (style->CellPadding.x * 2) + 1.0f;
+
+        const float y_pos = start_y + (qubit * button_height);
+        const float thickness = ScaleDPI(theme::kCircuitLineWidthH);
+
+        ImGui::GetWindowDrawList()->AddLineH(start_x, max_x, y_pos, theme::kBlack800Color,
+                                             thickness);
       }
 
       // Column 1 to N+1
@@ -65,13 +114,39 @@ void CircuitEditor::Draw() {
         ImGui::PushID(layer);
         ImGui::TableSetColumnIndex(layer + 1);
 
+        ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
+
         const GateButton *gate_button = buttons_arr_[qubit][layer];
-        const ImVec2 button_size = GetCircuitButtonSize();
+
+        //[Draw vertical lines]
+        if (gate_button->part != Circuit::Part::kEmpty &&
+            gate_button->part != Circuit::Part::kMeasure) {
+          const ImVec2 cursor_pos = ImGui::GetCursorScreenPos();
+          const float x_pos = cursor_pos.x + (button_size.x / 2);
+          const float y_pos = cursor_pos.y + (button_size.y / 2);
+          const float button_height = button_size.y + (style->CellPadding.y * 2); /* Incl. padding*/
+
+          for (Circuit::GridSize_T q = qubit + 1; q < data.num_qubits; ++q) {
+            const GateButton *other = buttons_arr_[q][layer];
+
+            if (!ShouldConnectGates(gate_button->part, other->part, layer)) continue;
+
+            const int num_down = q - qubit; /* How many qubits down are we? */
+            const float other_y_pos = y_pos + (button_height * num_down);
+            const float thickness = ScaleDPI(theme::kCircuitLineWidthV);
+
+            ImGui::GetWindowDrawList()->AddLineV(x_pos, y_pos, other_y_pos,
+                                                 theme::kCircuitLineColorV, thickness);
+            // break;
+          }
+        }
+
+        // Make button transparent
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(theme::kTransparentColor));
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(theme::kTransparentColor));
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(theme::kTransparentColor));
 
         if (gate_button->sprite_id != SpriteID::kUndefined) {
-          ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.f, 0.f, 0.f, 0.f));
-          ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.f, 0.f, 0.f, 0.f));
-          ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.f, 0.f, 0.f, 0.f));
           ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
           const Texture *texture = texture_manager.GetTexture(TextureID::kCircuit);
           const Sprite &sprite = kIdToSpriteMap.Get(gate_button->sprite_id);
@@ -80,10 +155,11 @@ void CircuitEditor::Draw() {
 
           ImGui::ImageButton(gate_button->name, texture->GetViewRef(), button_size, uv_1, uv_2);
           ImGui::PopStyleVar();
-          ImGui::PopStyleColor(3);
         } else {
           ImGui::Button(gate_button->name, button_size);
         }
+
+        ImGui::PopStyleColor(3); // ImGuiCol_Button[Hovered/Active] ...
 
         // DRAG AND DROP / SOURCE
         if (gate_button->part != Circuit::Part::kEmpty) {
@@ -119,14 +195,28 @@ void CircuitEditor::Draw() {
           ImGui::EndDragDropTarget();
         }
 
-        ImGui::PopID();
+        ImGui::PopStyleVar(); // ImGuiStyleVar_FrameBorderSize
+        ImGui::PopID(); // layer
       }
 
-      ImGui::PopID();
+      ImGui::PopID(); // qubit
     }
 
-    ImGui::EndTable();
+    ImGui::EndTable(); // Circuit Diagram
   }
+
+  // ImGuiContext *ctx = ImGui::GetCurrentContext();
+  // ImGuiID id = ImGui::GetID("Circuit Diagram");
+  //
+  // if (ImGuiTable *table = ctx->Tables.GetByKey(id); table != nullptr) {
+  //   const ImRect rect = table->OuterRect;
+  //
+  //   std::cout << " (" << rect.Min.x << ", " << rect.Min.y << ") / (" << rect.Max.x << ", " <<
+  //   rect.Max.y << ")\n";
+  // }
+
+  // ImGui::TableGetCellBgRect()
+  // ImGui::GetBackgroundDrawList()->AddLineH()
 }
 
 void CircuitEditor::ClearCircuit() {
@@ -217,6 +307,25 @@ void CircuitEditor::ReadFromCircuit() {
   }
 }
 
+bool CircuitEditor::ShouldConnectGates(const Circuit::Part a, const Circuit::Part b,
+                                       const Circuit::GridSize_T layer) const {
+
+  using enum Circuit::Part;
+
+  if (a == kEmpty || b == kEmpty) return false;
+  if (a == kMeasure || b == kMeasure) return false;
+
+  if (Circuit::IsControlBit(a) == Circuit::IsControlBit(b)) {
+    return a == kSwap && b == kSwap; // Only connect the same type if they're swap gates
+  }
+
+  if (a == kSwap || b == kSwap) {
+    return circuit_->ExistsValidSwapInLayer(layer); // Only connect other to swap if valid
+  }
+
+  return true;
+}
+
 /* --------------- CIRCUIT PALETTE ---------------*/
 
 void CircuitPalette::Draw() {
@@ -224,7 +333,7 @@ void CircuitPalette::Draw() {
   const TextureManager &texture_manager = Application::Instance().GetTextureManager();
 
   const float window_visible_x2 = ImGui::GetCursorScreenPos().x + ImGui::GetContentRegionAvail().x;
-  const ImVec2 button_size = GetCircuitButtonSize();
+  const ImVec2 button_size = ScaleDPI(theme::kCircuitButtonDefaultSize);
 
   constexpr std::size_t num_gates = gate::kKnownGates.size();
   for (int i = 0; std::cmp_less(i, num_gates); ++i) {
@@ -264,8 +373,10 @@ void CircuitPalette::Draw() {
       ImGui::EndDragDropSource();
     }
 
+    // Set hover cursor/ tooltip
     if (ImGui::IsItemHovered()) {
       ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
+      ImGui::SetTooltip("%s", gate_button->name);
     }
 
     ImGui::PopID();
@@ -343,11 +454,12 @@ void CircuitInfoPanel::RecomputeInfo() {
   *circuit_dirty_ = false;
 }
 
-/* --------------- MISC ---------------*/
-
-ImVec2 GetCircuitButtonSize() {
-  constexpr ImVec2 norm = {80, 80};
-  const float factor = ImGui::GetFontSize() / 13;
-
-  return {norm.x * factor, norm.y * factor};
-}
+// ImVec2 GetCircuitButtonSize() {
+//   auto vp = ImGui::GetMainViewport();
+//   auto dpi = vp->DpiScale;
+//
+//   constexpr ImVec2 default_size = theme::kCircuitButtonDefaultSize;
+//   const float factor = ImGui::GetFontSize() / theme::kDefaultFontSize; /* Get DPI Scale */
+//
+//   return {default_size.x * factor, default_size.y * factor};
+// }

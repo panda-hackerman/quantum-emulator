@@ -30,7 +30,11 @@ public:
     kMeasure,
     kSwap,
   };
-  
+
+  [[nodiscard]] static constexpr bool IsControlBit(const Part part) {
+    return part == Part::kControlBit || part == Part::kAntiControlBit;
+  }
+
   static constexpr GridSize_T kMinQubits = 1; ///< Minimum allowed qubits in a circuit
   static constexpr GridSize_T kMaxQubits = 8; ///< Maximum allowed qubits in a circuit
   static constexpr GridSize_T kMinDepth = 1; ///< Minimum allowed layers (aka circuit depth)
@@ -116,6 +120,12 @@ public:
   [[nodiscard]] std::vector<Part> GetPartsInLayer(GridSize_T layer) const;
 
   [[nodiscard]] std::vector<const Matrix_T *> GetMatricesInLayer(GridSize_T layer) const;
+
+  /**
+   * @param layer The layer to check
+   * @return True if there are at least 2 swap parts in this layer
+   */
+  [[nodiscard]] bool ExistsValidSwapInLayer(const GridSize_T layer) const;
 
   /**
    * Builds a simple example circuit, which looks like:

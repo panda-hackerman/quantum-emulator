@@ -109,3 +109,14 @@ std::vector<const Circuit::Matrix_T *> Circuit::GetMatricesInLayer(const GridSiz
 
   return out;
 }
+
+bool Circuit::ExistsValidSwapInLayer(const GridSize_T layer) const {
+  int num_swaps = 0;
+
+  for (GridSize_T qubit = 0; qubit < num_qubits_; ++qubit) {
+    if (GetPartTypeUnsafe(qubit, layer) == Part::kSwap) num_swaps++;
+    if (num_swaps >= 2) return true;
+  }
+
+  return false;
+}

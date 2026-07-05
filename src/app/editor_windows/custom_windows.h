@@ -82,6 +82,8 @@ public:
   void Set(Circuit::GridSize_T qubit, Circuit::GridSize_T layer, const GateButton *button);
 
   void ReadFromCircuit();
+
+  bool ShouldConnectGates(Circuit::Part a, Circuit::Part b, Circuit::GridSize_T layer) const;
 };
 
 class CircuitPalette {
@@ -113,7 +115,5 @@ public:
   void Draw();
   void RecomputeInfo();
 };
-
-ImVec2 GetCircuitButtonSize();
 
 #endif // CUSTOM_WINDOWS_H
