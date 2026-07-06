@@ -120,3 +120,11 @@ bool Circuit::ExistsValidSwapInLayer(const GridSize_T layer) const {
 
   return false;
 }
+
+bool Circuit::ExistsInLayer(const Part part, const GridSize_T layer) const {
+  for (GridSize_T qubit = 0; qubit < num_qubits_; ++qubit) {
+    if (GetPartTypeUnsafe(qubit, layer) == part) return true;
+  }
+
+  return false;
+}

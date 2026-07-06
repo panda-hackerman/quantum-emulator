@@ -96,8 +96,7 @@ void CircuitEditor::Draw() {
         const float top_y = table->OuterRect.Max.y; /* Top of table   */
         const float col_0_w = column->WidthGiven; /* Width of column 0 */ // FIXME: Fragile?
         const float header_height = !table->IsUsingHeaders ? 0 : ImGui::TableGetHeaderRowHeight();
-        const float button_height =
-            button_size.y + (style->CellPadding.y * 2); /* Height w padding */
+        const float button_height = button_size.y + (style->CellPadding.y * 2); /* Incl. padding */
 
         const float start_y = top_y + header_height + (button_size.y / 2) + style->CellPadding.y;
         const float start_x = min_x + col_0_w + (style->CellPadding.x * 2) + 1.0f;
@@ -118,7 +117,7 @@ void CircuitEditor::Draw() {
 
         const GateButton *gate_button = buttons_arr_[qubit][layer];
 
-        //[Draw vertical lines]
+        //[DRAW VERTICAL LINES]
         if (gate_button->part != Circuit::Part::kEmpty &&
             gate_button->part != Circuit::Part::kMeasure) {
           const ImVec2 cursor_pos = ImGui::GetCursorScreenPos();
@@ -126,18 +125,18 @@ void CircuitEditor::Draw() {
           const float y_pos = cursor_pos.y + (button_size.y / 2);
           const float button_height = button_size.y + (style->CellPadding.y * 2); /* Incl. padding*/
 
-          for (Circuit::GridSize_T q = qubit + 1; q < data.num_qubits; ++q) {
+          for (Circuit::GridSize_T q = qubit + 1; std::cmp_less(q, data.num_qubits); ++q) {
             const GateButton *other = buttons_arr_[q][layer];
 
             if (!ShouldConnectGates(gate_button->part, other->part, layer)) continue;
 
-            const int num_down = q - qubit; /* How many qubits down are we? */
+            const float num_down = static_cast<float>(q - qubit); /* How many qubits down are we? */
             const float other_y_pos = y_pos + (button_height * num_down);
             const float thickness = ScaleDPI(theme::kCircuitLineWidthV);
 
             ImGui::GetWindowDrawList()->AddLineV(x_pos, y_pos, other_y_pos,
                                                  theme::kCircuitLineColorV, thickness);
-            // break;
+            break; // Only draw one line
           }
         }
 
@@ -315,15 +314,40 @@ bool CircuitEditor::ShouldConnectGates(const Circuit::Part a, const Circuit::Par
   if (a == kEmpty || b == kEmpty) return false;
   if (a == kMeasure || b == kMeasure) return false;
 
-  if (Circuit::IsControlBit(a) == Circuit::IsControlBit(b)) {
-    return a == kSwap && b == kSwap; // Only connect the same type if they're swap gates
-  }
+  const bool exists_valid_swap = circuit_->ExistsValidSwapInLayer(layer);
+  const bool exists_matrix = circuit_->ExistsInLayer(kMatrix2x2, layer);
 
-  if (a == kSwap || b == kSwap) {
-    return circuit_->ExistsValidSwapInLayer(layer); // Only connect other to swap if valid
+  switch (a) {
+    case kMatrix2x2:
+      return Circuit::IsControlBit(b);
+    case kControlBit:
+    case kAntiControlBit:
+      switch (b) { /* Control bit */
+        case kMatrix2x2:
+          return true;
+        case kControlBit:
+        case kAntiControlBit:
+          return exists_valid_swap || exists_matrix;
+        case kSwap:
+          return exists_valid_swap;
+        default:
+          return false;
+      }
+    case kSwap:
+      switch (b) { /* Swap gate */
+        case kMatrix2x2:
+          return false;
+        case kControlBit:
+        case kAntiControlBit:
+          return exists_valid_swap;
+        case kSwap:
+          return true;
+        default:
+          return false;
+      }
+    default:
+      return false;
   }
-
-  return true;
 }
 
 /* --------------- CIRCUIT PALETTE ---------------*/

@@ -125,7 +125,15 @@ public:
    * @param layer The layer to check
    * @return True if there are at least 2 swap parts in this layer
    */
-  [[nodiscard]] bool ExistsValidSwapInLayer(const GridSize_T layer) const;
+  [[nodiscard]] bool ExistsValidSwapInLayer(GridSize_T layer) const;
+
+  /**
+   * Check if a part exists in a layer
+   * @param part The part to check for
+   * @param layer The layer to check
+   * @return True if the part exists in the layer
+   */
+  [[nodiscard]] bool ExistsInLayer(Part part, GridSize_T layer) const;
 
   /**
    * Builds a simple example circuit, which looks like:
