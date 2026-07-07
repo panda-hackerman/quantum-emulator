@@ -151,6 +151,8 @@ std::vector<Complex> ApplySwap(const std::vector<Complex> &in, const Circuit::Gr
 std::vector<Complex> SimulateCircuitQubitWise(const Circuit &circuit,
                                               const std::vector<Complex> &in) {
 
+  static constexpr std::size_t invalid_qubit_index = Circuit::kMaxQubits + 1;
+
   const Circuit::GridSize_T num_qubits = circuit.GetNumQubits();
   const Circuit::GridSize_T num_layers = circuit.GetNumLayers();
 
@@ -160,10 +162,20 @@ std::vector<Complex> SimulateCircuitQubitWise(const Circuit &circuit,
     std::vector<const Circuit::Matrix_T *> matrix_list = circuit.GetMatricesInLayer(layer);
     std::vector<Circuit::Part> parts_list = circuit.GetPartsInLayer(layer);
 
+    /// Indices of swap gates (if they exist)
+    std::array<std::size_t, 2> swap_indices = {{invalid_qubit_index, invalid_qubit_index}};
+
     for (Circuit::GridSize_T qubit = 0; qubit < num_qubits; ++qubit) {
       if (parts_list[qubit] == Circuit::Part::kMatrix2x2) {
         state = QubitWiseMultiply(state, num_qubits, matrix_list[qubit], qubit, parts_list);
+      } else if (parts_list[qubit] == Circuit::Part::kSwap) {
+        const int idx = swap_indices[0] == invalid_qubit_index ? 0 : 1;
+        swap_indices[idx] = qubit;
       }
+    }
+
+    if (swap_indices[0] != invalid_qubit_index && swap_indices[1] != invalid_qubit_index) {
+      state = ApplySwap(state, num_qubits, swap_indices[0], swap_indices[1], parts_list);
     }
   }
 
