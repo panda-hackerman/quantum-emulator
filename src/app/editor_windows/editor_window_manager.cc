@@ -8,6 +8,7 @@
 
 #include <filesystem>
 
+#include "../resources/editorconfig_handler.h"
 #include "../theme.h"
 #include "custom_windows.h"
 #include "imgui_internal.h"
@@ -23,11 +24,7 @@ void EditorWindowManager::Init() {
 
   SetImGuiStyle();
 
-  if constexpr (kImGuiIniPath != nullptr) {
-    if (!std::filesystem::exists(kImGuiIniPath)) {
-      ImGui::SaveIniSettingsToDisk(kImGuiIniPath);
-    }
-  }
+  InitFilePath();
 
   ImGuiIO &io = ImGui::GetIO();
   io.IniFilename = kImGuiIniPath;

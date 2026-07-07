@@ -12,8 +12,9 @@ add_executable(App main.cc
         application/device_window.cc
         editor_windows/custom_windows.h
         editor_windows/custom_windows.cc
-        textures/texture.cc
-        textures/texture.h
+        resources/texture.cc
+        resources/texture.h
+        resources/editorconfig_handler.h
         theme.h
 )
 

@@ -8,7 +8,7 @@
 #include <webgpu/webgpu.hpp>
 
 #include "../editor_windows/editor_window_manager.h"
-#include "../textures/texture.h"
+#include "../resources/texture.h"
 #include "device_window.h"
 
 /// The application (singleton)

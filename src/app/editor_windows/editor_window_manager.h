@@ -32,12 +32,6 @@ private:
   bool circuit_info_dirty_ = false;
 
 public:
-#ifndef __ESCRIPTEN__
-  static constexpr const char *kImGuiIniPath = "data/imgui.ini";
-#else
-  static constexpr const char *kImGuiIniPath = nullptr; // No ini file on web...
-#endif
-
   void Init();
   void SetupWindows();
   void DrawWindows();

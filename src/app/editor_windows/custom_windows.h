@@ -7,7 +7,7 @@
 
 #include <bitset>
 
-#include "../textures/texture.h"
+#include "../resources/texture.h"
 #include "imgui.h"
 #include "math/constants.h"
 #include "quantum_circuit/circuit.h"
