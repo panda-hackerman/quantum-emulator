@@ -58,6 +58,19 @@
  */
 [[nodiscard]] std::vector<Complex> SimulateCircuitQubitWise(const Circuit &circuit);
 
+/**
+ * Simulate an entire layer using the Qubit-wise Multiply Method
+ * @param in The input state vector
+ * @param num_qubits The number of qubits in the layer
+ * @param matrix_list The list of matrices in this layer
+ * @param parts_list  The list of parts in this layer
+ * @return The s
+ */
+[[nodiscard]] std::vector<Complex> SimulateLayerQubitWise(
+    const std::vector<Complex> &in, Circuit::GridSize_T num_qubits,
+    const std::vector<const Circuit::Matrix_T *> &matrix_list,
+    const std::vector<Circuit::Part> &parts_list);
+
 // TODO: Control Bits
 /**
  * Explicitly compute the matrix for a layer.

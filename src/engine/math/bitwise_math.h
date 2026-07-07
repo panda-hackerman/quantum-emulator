@@ -5,6 +5,7 @@
 #ifndef BITWISE_MATH_H
 #define BITWISE_MATH_H
 
+/// Bit-twiddling magic
 namespace bit {
 
 /**
@@ -17,13 +18,13 @@ constexpr auto TwoPowN(T n) {
 }
 
 /**
- * Get the nth bit of a number
+ * Get a bit from a number
  * @param input The number to get the bit from
  * @param n The index of the bit
  * @return The nth bit
  */
 template <typename T>
-constexpr auto GetNthBit(T input, T n) {
+constexpr auto GetBit(T input, T n) {
   return (input >> n) & 1;
 }
 
