@@ -122,6 +122,7 @@ public:
   [[nodiscard]] std::vector<const Matrix_T *> GetMatricesInLayer(GridSize_T layer) const;
 
   /**
+   * Check for valid swaps
    * @param layer The layer to check
    * @return True if there are at least 2 swap parts in this layer
    */
@@ -134,6 +135,13 @@ public:
    * @return True if the part exists in the layer
    */
   [[nodiscard]] bool ExistsInLayer(Part part, GridSize_T layer) const;
+
+  /**
+   * Check if this layer is valid
+   * @param layer The parts in the layer to check
+   * @return True if this is a valid arrangement.
+   */
+  [[nodiscard]] static bool IsValidLayer(const std::vector<Part>& layer);
 
   /**
    * Builds a simple example circuit, which looks like:

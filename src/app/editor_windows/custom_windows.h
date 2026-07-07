@@ -31,23 +31,34 @@ struct GateButton {
 
 /// Preset gate types
 namespace gate { /// Default gates
+
 inline constexpr GateButton kEmpty = {"", Circuit::Part::kEmpty};
+inline constexpr GateButton kControlBit = {"Control", Circuit::Part::kControlBit,
+                                           SpriteID::kCircuitControl};
+inline constexpr GateButton kAntiControlBit = {"Anti-Control", Circuit::Part::kAntiControlBit,
+                                               SpriteID::kCircuitAntiControl};
 
-inline constexpr GateButton kControlBit = {"Control", Circuit::Part::kControlBit, SpriteID::kCircuitControl};
-inline constexpr GateButton kAntiControlBit = {"Anti-Control", Circuit::Part::kAntiControlBit, SpriteID::kCircuitAntiControl};
-inline constexpr GateButton kMeasurementGate = {"Measurement", Circuit::Part::kMeasure, SpriteID::kCircuitMeasure};
+inline constexpr GateButton kMeasurementGate = {"Measurement", Circuit::Part::kMeasure,
+                                                SpriteID::kCircuitMeasure};
 inline constexpr GateButton kSwapGate = {"Swap", Circuit::Part::kSwap, SpriteID::kCircuitSwap};
-
-inline constexpr GateButton kIdentity = {"Identity", Circuit::Part::kMatrix2x2, SpriteID::kCircuitIdentity, &matrix::kIdentity};
-inline constexpr GateButton kPauliX = {"Pauli X", Circuit::Part::kMatrix2x2, SpriteID::kCircuitPauliX, &matrix::kPauliX};
-inline constexpr GateButton kPauliY = {"Pauli Y", Circuit::Part::kMatrix2x2, SpriteID::kCircuitPauliY, &matrix::kPauliY};
-inline constexpr GateButton kPauliZ = {"Pauli Z", Circuit::Part::kMatrix2x2, SpriteID::kCircuitPauliZ, &matrix::kPauliZ};
-inline constexpr GateButton kHadamard = {"Hadamard", Circuit::Part::kMatrix2x2, SpriteID::kCircuitHadamard, &matrix::kHadamard};
-inline constexpr GateButton kTGate = {"T Gate", Circuit::Part::kMatrix2x2, SpriteID::kCircuitTGate, &matrix::kPi8ths};
+inline constexpr GateButton kIdentity = {"Identity", Circuit::Part::kMatrix2x2,
+                                         SpriteID::kCircuitIdentity, &matrix::kIdentity};
+inline constexpr GateButton kPauliX = {"Pauli X", Circuit::Part::kMatrix2x2,
+                                       SpriteID::kCircuitPauliX, &matrix::kPauliX};
+inline constexpr GateButton kPauliY = {"Pauli Y", Circuit::Part::kMatrix2x2,
+                                       SpriteID::kCircuitPauliY, &matrix::kPauliY};
+inline constexpr GateButton kPauliZ = {"Pauli Z", Circuit::Part::kMatrix2x2,
+                                       SpriteID::kCircuitPauliZ, &matrix::kPauliZ};
+inline constexpr GateButton kHadamard = {"Hadamard", Circuit::Part::kMatrix2x2,
+                                         SpriteID::kCircuitHadamard, &matrix::kHadamard};
+inline constexpr GateButton kTGate = {"T Gate", Circuit::Part::kMatrix2x2, SpriteID::kCircuitTGate,
+                                      &matrix::kPi8ths};
+inline constexpr GateButton kPhaseGate = {"Phase Gate", Circuit::Part::kMatrix2x2,
+                                          SpriteID::kCircuitPhase, &matrix::kPhase};
 
 inline constexpr auto kKnownGates = std::array{
-    &kEmpty,  &kControlBit, &kAntiControlBit, &kMeasurementGate, &kSwapGate, &kIdentity,
-    &kPauliX, &kPauliY,     &kPauliZ,         &kHadamard,        &kTGate,
+    &kEmpty, &kIdentity,  &kHadamard,   &kPauliX,         &kPauliY,   &kPauliZ,
+    &kTGate, &kPhaseGate, &kControlBit, &kAntiControlBit, &kSwapGate, &kMeasurementGate,
 };
 } // namespace gate
 
@@ -56,6 +67,10 @@ private:
   Circuit *circuit_;
   bool *circuit_dirty_;
   const GateButton *buttons_arr_[Circuit::kMaxQubits][Circuit::kMaxDepth]; // TODO: Dynamic?
+
+  /* Drag and drop payload types */
+  static constexpr auto kPayloadTypeSwap = "BUTTON_SWAP";
+  static constexpr auto kPayloadTypeSet = "BUTTON_SET";
 
 public:
   struct { // Data that will be touched directly by ImGui (e.g. by an input)
@@ -83,7 +98,15 @@ public:
 
   void ReadFromCircuit();
 
-  bool ShouldConnectGates(Circuit::Part a, Circuit::Part b, Circuit::GridSize_T layer) const;
+  /// True if we should draw a vertical line between these two gates
+  [[nodiscard]] bool ShouldConnectGates(Circuit::Part a, Circuit::Part b,
+                                        Circuit::GridSize_T layer) const;
+
+  [[nodiscard]] bool IsValidSwap(Circuit::GridSize_T qubit_a, Circuit::GridSize_T layer_a,
+                                 Circuit::GridSize_T qubit_b, Circuit::GridSize_T layer_b) const;
+
+  [[nodiscard]] bool IsValidSet(Circuit::GridSize_T qubit, Circuit::GridSize_T layer,
+                                Circuit::Part part) const;
 };
 
 class CircuitPalette {

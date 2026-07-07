@@ -178,17 +178,40 @@ void CircuitEditor::Draw() {
 
         // DRAG AND DROP / TARGET
         if (ImGui::BeginDragDropTarget()) {
-          if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("BUTTON_SWAP")) {
-            auto [payload_qubit, payload_layer] = *static_cast<GateSwapPayload *>(payload->Data);
+          constexpr ImGuiDragDropFlags flags = ImGuiDragDropFlags_AcceptBeforeDelivery | ImGuiDragDropFlags_AcceptNoPreviewTooltip;
 
-            Set(qubit, layer, buttons_arr_[payload_qubit][payload_layer]);
-            Set(payload_qubit, payload_layer, gate_button);
+          if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload(kPayloadTypeSwap, flags)) {
+            auto [payload_qubit, payload_layer] = *static_cast<GateSwapPayload *>(payload->Data);
+            const bool valid = IsValidSwap(qubit, layer, payload_qubit, payload_layer);
+
+            if (valid && payload->IsDelivery()) {
+              Set(qubit, layer, buttons_arr_[payload_qubit][payload_layer]);
+              Set(payload_qubit, payload_layer, gate_button);
+            }
+
+            // Mouse/ tooltips
+            if (!valid) {
+              ImGui::SetMouseCursor(ImGuiMouseCursor_NotAllowed);
+              ImGui::SetTooltip("%s", "Cannot place here!");
+            } else {
+              ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
+            }
           }
 
-          if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("BUTTON_SET")) {
+          if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload(kPayloadTypeSet, flags)) {
             const GateButton *payload_button = *static_cast<const GateButton **>(payload->Data);
+            const bool valid = IsValidSet(qubit, layer, payload_button->part);
 
-            Set(qubit, layer, payload_button);
+            if (valid && payload->IsDelivery()) {
+              Set(qubit, layer, payload_button);
+            }
+
+            if (!valid) {
+              ImGui::SetMouseCursor(ImGuiMouseCursor_NotAllowed);
+              ImGui::SetTooltip("%s", "Cannot place here!");
+            } else {
+              ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
+            }
           }
 
           ImGui::EndDragDropTarget();
@@ -203,19 +226,6 @@ void CircuitEditor::Draw() {
 
     ImGui::EndTable(); // Circuit Diagram
   }
-
-  // ImGuiContext *ctx = ImGui::GetCurrentContext();
-  // ImGuiID id = ImGui::GetID("Circuit Diagram");
-  //
-  // if (ImGuiTable *table = ctx->Tables.GetByKey(id); table != nullptr) {
-  //   const ImRect rect = table->OuterRect;
-  //
-  //   std::cout << " (" << rect.Min.x << ", " << rect.Min.y << ") / (" << rect.Max.x << ", " <<
-  //   rect.Max.y << ")\n";
-  // }
-
-  // ImGui::TableGetCellBgRect()
-  // ImGui::GetBackgroundDrawList()->AddLineH()
 }
 
 void CircuitEditor::ClearCircuit() {
@@ -350,6 +360,32 @@ bool CircuitEditor::ShouldConnectGates(const Circuit::Part a, const Circuit::Par
   }
 }
 
+bool CircuitEditor::IsValidSwap(const Circuit::GridSize_T qubit_a,
+                                const Circuit::GridSize_T layer_a,
+                                const Circuit::GridSize_T qubit_b,
+                                const Circuit::GridSize_T layer_b) const {
+  if (layer_a == layer_b) {
+    return true; // There aren't any rules depending on layer position
+  }
+
+  std::vector<Circuit::Part> parts_a = circuit_->GetPartsInLayer(layer_a);
+  std::vector<Circuit::Part> parts_b = circuit_->GetPartsInLayer(layer_b);
+
+  parts_a.at(qubit_a) = buttons_arr_[qubit_b][layer_b]->part;
+  parts_b.at(qubit_b) = buttons_arr_[qubit_a][layer_a]->part;
+
+  return Circuit::IsValidLayer(parts_a) && Circuit::IsValidLayer(parts_b);
+}
+
+bool CircuitEditor::IsValidSet(const Circuit::GridSize_T qubit, const Circuit::GridSize_T layer,
+                               const Circuit::Part part) const {
+
+  std::vector<Circuit::Part> parts = circuit_->GetPartsInLayer(layer);
+  parts.at(qubit) = part;
+
+  return Circuit::IsValidLayer(parts);
+}
+
 /* --------------- CIRCUIT PALETTE ---------------*/
 
 void CircuitPalette::Draw() {
@@ -364,7 +400,6 @@ void CircuitPalette::Draw() {
     ImGui::PushID(i);
 
     const GateButton *gate_button = gate::kKnownGates[i];
-    // ImGui::Button(gate_button->name, button_size);
 
     if (gate_button->sprite_id != SpriteID::kUndefined) {
       ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.f, 0.f, 0.f, 0.f));
@@ -477,13 +512,3 @@ void CircuitInfoPanel::RecomputeInfo() {
 
   *circuit_dirty_ = false;
 }
-
-// ImVec2 GetCircuitButtonSize() {
-//   auto vp = ImGui::GetMainViewport();
-//   auto dpi = vp->DpiScale;
-//
-//   constexpr ImVec2 default_size = theme::kCircuitButtonDefaultSize;
-//   const float factor = ImGui::GetFontSize() / theme::kDefaultFontSize; /* Get DPI Scale */
-//
-//   return {default_size.x * factor, default_size.y * factor};
-// }
