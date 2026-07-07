@@ -129,7 +129,7 @@ private:
 
 public:
   struct {
-    bool skip_empty_probs = true;
+    bool skip_empty_probs = false; // Disabled by default
   } data;
 
   explicit CircuitInfoPanel(Circuit *circuit, bool *circuit_dirty) :

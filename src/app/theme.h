@@ -4,7 +4,6 @@
 
 #ifndef THEME_H
 #define THEME_H
-#include <cstdint>
 
 #include "imgui.h"
 
@@ -49,6 +48,9 @@ inline constexpr auto kBlueHighlightColor = RGBColor(0x5B618A);
 inline constexpr auto kBlueHighlightColorDark = RGBColor(0x585D82);
 inline constexpr auto kTurquoiseHighlightColor = RGBColor(0x429EA6);
 inline constexpr auto kTurquoiseHighlightColorDark = RGBColor(0x42959C);
+
+// WebGPU colors
+static constexpr WGPUColor kWindowClearColor = {100 / 255.0, 149 / 255.0, 237 / 255.0, 1};
 
 // SIZES
 

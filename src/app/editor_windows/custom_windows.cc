@@ -29,6 +29,11 @@ ImVec2 ScaleDPI(const ImVec2 vec2) {
   return {vec2.x * dpi, vec2.y * dpi};
 }
 
+/**
+ * Scale a float by the current DPI.
+ * @param x The float to scale
+ * @return A new (scaled) float
+ */
 float ScaleDPI(const float x) {
   const ImGuiViewport *viewport = ImGui::GetMainViewport();
   const float dpi = viewport->DpiScale;
