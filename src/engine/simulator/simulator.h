@@ -35,6 +35,16 @@
                                                      Circuit::GridSize_T qubit_index,
                                                      const std::vector<Circuit::Part> &parts);
 
+/**
+ * Simulate the effect of a swap gate on a state vector.
+ *
+ * @param in The input state vector.
+ * @param num_qubits The number of qubits.
+ * @param qubit_a The first qubit to swap
+ * @param qubit_b The second qubit to swap
+ * @param parts The list of parts (indicates where the control bits are).
+ * @return
+ */
 [[nodiscard]] std::vector<Complex> ApplySwap(const std::vector<Complex> &in,
                                              Circuit::GridSize_T num_qubits,
                                              Circuit::GridSize_T qubit_a,
