@@ -35,6 +35,12 @@
                                                      Circuit::GridSize_T qubit_index,
                                                      const std::vector<Circuit::Part> &parts);
 
+[[nodiscard]] std::vector<Complex> ApplySwap(const std::vector<Complex> &in,
+                                             Circuit::GridSize_T num_qubits,
+                                             Circuit::GridSize_T qubit_a,
+                                             Circuit::GridSize_T qubit_b,
+                                             const std::vector<Circuit::Part> &parts);
+
 /**
  * Simulate an entire circuit using the Qubit-wise Multiply Method.
  * @param circuit The circuit to simulate

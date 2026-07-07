@@ -6,6 +6,7 @@
 
 #include "simulator.h"
 
+#include "math/bitwise_math.h"
 #include "math/constants.h"
 
 std::vector<Complex> QubitWiseMultiply(const std::vector<Complex> &in,
@@ -56,6 +57,7 @@ std::vector<Complex> QubitWiseMultiply(const std::vector<Complex> &in,
     }
   }
 
+  // Apply qubit-wise multiply
   const int half_block_size = (1 << qubit_index);   // 2^q
   const int block_size = half_block_size * 2;
 
@@ -73,6 +75,73 @@ std::vector<Complex> QubitWiseMultiply(const std::vector<Complex> &in,
 
       out[idx_1] = (*matrix)[0][0] * in[idx_1] + (*matrix)[0][1] * in[idx_2];
       out[idx_2] = (*matrix)[1][0] * in[idx_1] + (*matrix)[1][1] * in[idx_2];
+    }
+  }
+
+  return out;
+}
+
+std::vector<Complex> ApplySwap(const std::vector<Complex> &in, const Circuit::GridSize_T num_qubits,
+                               const Circuit::GridSize_T qubit_a, const Circuit::GridSize_T qubit_b,
+                               const std::vector<Circuit::Part> &parts) {
+
+  if (num_qubits != parts.size()) {
+    throw std::invalid_argument("Must have as many parts as qubits!");
+  }
+
+  if (qubit_a < 0 || qubit_a > Circuit::kMaxQubits) {
+    throw std::invalid_argument(std::format("Qubit index must be within the range 0 to {}! Got: {}",
+                                            Circuit::kMaxQubits, qubit_a));
+  }
+
+  if (qubit_b < 0 || qubit_b > Circuit::kMaxQubits) {
+    throw std::invalid_argument(std::format("Qubit index must be within the range 0 to {}! Got: {}",
+                                            Circuit::kMaxQubits, qubit_a));
+  }
+
+  const int state_vector_size = bit::TwoPowN(num_qubits);
+
+  if (in.size() != state_vector_size) {
+    throw std::invalid_argument("State vector size must be equal to 2^n, where n is the "
+                                "number of qubits!");
+  }
+
+  if (qubit_a == qubit_b) return in; // We're done !
+
+  // Output state vector
+  std::vector<Complex> out = in;
+
+  // Calculate masks for control qubits
+  int inclusion_mask = 0;
+  int desired_mask = 0;
+
+  for (std::size_t i = 0; i < parts.size(); ++i) {
+    const int bit = bit::TwoPowN(i);
+
+    if (parts[i] == Circuit::Part::kControlBit) {
+      inclusion_mask |= bit;
+      desired_mask |= bit;
+    } else if (parts[i] == Circuit::Part::kAntiControlBit) {
+      inclusion_mask |= bit;
+    }
+  }
+
+  // Apply swap
+  const int mask_a = bit::TwoPowN(qubit_a);
+  const int mask_b = bit::TwoPowN(qubit_b);
+
+  for (int k = 0; k < state_vector_size; ++k) {
+    if ((k & inclusion_mask) != desired_mask) continue; // Skip
+
+    const auto ath_bit_of_k = bit::GetNthBit<int>(k, qubit_a);
+    const auto bth_bit_of_k = bit::GetNthBit<int>(k, qubit_b);
+
+    if (ath_bit_of_k == 1 && bth_bit_of_k == 0) {
+      const int k_2 = (k & (~mask_a)) | mask_b; // Turn off bit A, turn on bit B.
+
+      // Swap bits
+      out[k_2] = in[k];
+      out[k] = in[k_2];
     }
   }
 
