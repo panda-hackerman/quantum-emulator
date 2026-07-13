@@ -14,7 +14,7 @@ namespace bit {
  */
 template <typename T>
 constexpr auto TwoPowN(T n) {
-  return (1 << n);
+  return (static_cast<T>(1) << n);
 }
 
 /**

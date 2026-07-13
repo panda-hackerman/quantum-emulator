@@ -6,6 +6,7 @@
 
 #include <bitset>
 #include <iostream>
+#include <numeric>
 #include <utility>
 
 #include "../application/application.h"
@@ -183,7 +184,8 @@ void CircuitEditor::Draw() {
 
         // DRAG AND DROP / TARGET
         if (ImGui::BeginDragDropTarget()) {
-          constexpr ImGuiDragDropFlags flags = ImGuiDragDropFlags_AcceptBeforeDelivery | ImGuiDragDropFlags_AcceptNoPreviewTooltip;
+          constexpr ImGuiDragDropFlags flags =
+              ImGuiDragDropFlags_AcceptBeforeDelivery | ImGuiDragDropFlags_AcceptNoPreviewTooltip;
 
           if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload(kPayloadTypeSwap, flags)) {
             auto [payload_qubit, payload_layer] = *static_cast<GateSwapPayload *>(payload->Data);
@@ -448,72 +450,46 @@ void CircuitPalette::Draw() {
 }
 
 /* --------------- CIRCUIT INFO PANEL ---------------*/
-
 void CircuitInfoPanel::Draw() {
   ImGui::Checkbox("Skip outputs with 0 probability", &data.skip_empty_probs);
 
-  if (*circuit_dirty_ == true || info_str_.empty()) {
-    RecomputeInfo();
+  if (*circuit_dirty_ == true) {
+    RecomputeInfo(); // TODO: Could be moved
   }
 
   if (ImPlot::BeginPlot("Probability Distribution:", {-1, 0},
                         ImPlotFlags_Equal | ImPlotFlags_NoLegend | ImPlotFlags_NoMouseText)) {
 
-    std::vector<const char *> x_axis_labels;
-    std::vector<double> probabilities;
+    const std::vector<const char *> *x_axis_labels;
+    const std::vector<double> *probabilities;
 
-    std::vector<double> positions;
-    double next_pos = 0;
-
-    for (int i = 0; i < plot_labels_.size(); ++i) {
-      if (data.skip_empty_probs && plot_probs_[i] == 0) continue;
-
-      x_axis_labels.emplace_back(plot_labels_[i].data()); // Ignore error, compiles fine :P
-      probabilities.push_back(plot_probs_[i]);
-
-      positions.push_back(next_pos++);
+    if (!data.skip_empty_probs) {
+      x_axis_labels = &info_.labels_c;
+      probabilities = &info_.densities;
+    } else {
+      x_axis_labels = &info_.labels_c_nonzero;
+      probabilities = &info_.densities_nonzero;
     }
 
-    const int groups_size = static_cast<int>(positions.size());
+    const int count = static_cast<int>(x_axis_labels->size());
+
+    std::vector<double> positions(count);
+    std::ranges::iota(positions, 0);
 
     ImPlot::SetupAxes("Output", "Probability", ImPlotAxisFlags_AutoFit, ImPlotAxisFlags_AutoFit);
     ImPlot::SetupAxisLimits(ImAxis_Y1, 0, 1, ImGuiCond_Always);
-    ImPlot::SetupAxisTicks(ImAxis_X1, positions.data(), groups_size, x_axis_labels.data());
-    ImPlot::PlotBars("", probabilities.data(), groups_size, 0.8, 0);
+    ImPlot::SetupAxisTicks(ImAxis_X1, positions.data(), count, x_axis_labels->data());
+    ImPlot::PlotBars("", probabilities->data(), count, kBarSize, 0);
 
     ImPlot::EndPlot();
   }
-
-  ImGui::Text("%s", info_str_.data());
 }
 
 void CircuitInfoPanel::RecomputeInfo() {
+  state_vector_ = StateVector{circuit_->GetNumQubits()};
+  ApplyCircuitQubitWise(*circuit_, state_vector_);
 
-  state_vector_ = SimulateCircuitQubitWise(*circuit_);
-
-  const Circuit::GridSize_T num_qubits = circuit_->GetNumQubits();
-  const int state_vector_size = 1 << num_qubits;
-
-  if (state_vector_.size() != state_vector_size) {
-    std::cerr << "Invalid state vector size; must be 2^n for n qubits." << std::endl;
-    return;
-  }
-
-  plot_labels_.clear();
-  plot_probs_.clear();
-
-  for (int i = state_vector_size - 1; i >= 0; --i) {
-    const Complex &complex = state_vector_[i];
-    const double probability = std::pow(std::abs(complex), 2);
-
-    // Convert decimal -> binary
-    std::string bit_string = Bitset(i).to_string();
-    bit_string = bit_string.substr(bit_string.size() - num_qubits);
-    std::ranges::reverse(bit_string);
-
-    plot_labels_.push_back(bit_string);
-    plot_probs_.push_back(probability);
-  }
+  info_.RecalculateData(state_vector_);
 
   *circuit_dirty_ = false;
 }

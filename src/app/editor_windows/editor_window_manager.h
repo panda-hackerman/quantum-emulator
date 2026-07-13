@@ -29,7 +29,7 @@ private:
   CircuitPalette circuit_palette_{};
 
   bool is_initialized_ = false;
-  bool circuit_info_dirty_ = false;
+  bool circuit_info_dirty_ = true;
 
 public:
   void Init();

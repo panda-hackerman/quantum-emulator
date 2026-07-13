@@ -16,6 +16,8 @@ add_executable(App main.cc
         resources/texture.h
         resources/editorconfig_handler.h
         theme.h
+        editor_windows/circuit_info_processor.h
+        editor_windows/circuit_info_processor.cc
 )
 
 target_link_libraries(App PRIVATE Engine)

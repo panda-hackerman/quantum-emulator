@@ -9,45 +9,32 @@
 #include "math/bitwise_math.h"
 #include "math/constants.h"
 
-std::vector<Complex> QubitWiseMultiply(const std::vector<Complex> &in,
-                                       const Circuit::GridSize_T num_qubits,
-                                       const Circuit::Matrix_T *matrix,
-                                       const Circuit::GridSize_T qubit_index,
-                                       const std::vector<Circuit::Part> &parts) {
+void ApplyMatrixQubitWise(StateVector &state_vector, const Circuit::Matrix_T *matrix,
+                       const Circuit::GridSize_T qubit_index,
+                       const std::span<Circuit::Part> parts) {
 
-  if (num_qubits != parts.size()) {
-    throw std::invalid_argument("Must have as many parts as qubits!");
+  if (state_vector.NumQubits() != parts.size()) {
+    throw std::invalid_argument("Number of qubits must match number of parts!");
   }
 
   if (matrix->NumRows() != 2 || matrix->NumCols() != 2) {
+    // TODO: Support different matrix sizes
     throw std::invalid_argument("Qubit-wise multiply must be called with a 2x2 matrix!");
   }
 
-  if (qubit_index >= num_qubits) {
+  if (qubit_index >= state_vector.NumQubits()) {
     throw std::invalid_argument("Qubit index must be lower than the number of qubits!");
   }
 
-  if (qubit_index < 0 || qubit_index > Circuit::kMaxQubits) {
-    throw std::invalid_argument(std::format("Qubit index must be within the range 0 to {}! Got: {}",
-                                            Circuit::kMaxQubits, qubit_index));
-  }
-
-  const int state_vector_size = (1 << num_qubits);  // 2^n
-
-  if (in.size() != state_vector_size) {
-    throw std::invalid_argument("State vector size must be equal to 2^n, where n is the "
-                                "number of qubits!");
-  }
-
-  // Output state vector
-  std::vector<Complex> out = in;
+  // Output state vector (copying object)
+  const StateVector out = state_vector;
 
   // Calculate masks for control qubits
   int inclusion_mask = 0;
   int desired_mask = 0;
 
   for (std::size_t i = 0; i < parts.size(); ++i) {
-    const int bit = 1 << i;
+    const int bit = static_cast<int>(bit::TwoPowN(i)); // 2^i
 
     if (parts[i] == Circuit::Part::kControlBit) {
       inclusion_mask |= bit;
@@ -58,10 +45,10 @@ std::vector<Complex> QubitWiseMultiply(const std::vector<Complex> &in,
   }
 
   // Apply qubit-wise multiply
-  const int half_block_size = (1 << qubit_index);   // 2^q
+  const int half_block_size = bit::TwoPowN(qubit_index);   // 2^q
   const int block_size = half_block_size * 2;
 
-  const int num_blocks = state_vector_size / block_size;
+  const int num_blocks = static_cast<int>(out.Size() / block_size);
 
   for (int block = 0; block < num_blocks; ++block) {
     const int block_start = block * block_size;
@@ -73,20 +60,19 @@ std::vector<Complex> QubitWiseMultiply(const std::vector<Complex> &in,
 
       if ((idx_1 & inclusion_mask) != desired_mask) continue;
 
-      out[idx_1] = (*matrix)[0][0] * in[idx_1] + (*matrix)[0][1] * in[idx_2];
-      out[idx_2] = (*matrix)[1][0] * in[idx_1] + (*matrix)[1][1] * in[idx_2];
+      out[idx_1] = (*matrix)[0][0] * state_vector[idx_1] + (*matrix)[0][1] * state_vector[idx_2];
+      out[idx_2] = (*matrix)[1][0] * state_vector[idx_1] + (*matrix)[1][1] * state_vector[idx_2];
     }
   }
 
-  return out;
+  state_vector = out;
 }
 
-std::vector<Complex> ApplySwap(const std::vector<Complex> &in, const Circuit::GridSize_T num_qubits,
-                               const Circuit::GridSize_T qubit_a, const Circuit::GridSize_T qubit_b,
-                               const std::vector<Circuit::Part> &parts) {
+void ApplySwap(StateVector &state_vector, const Circuit::GridSize_T qubit_a,
+               const Circuit::GridSize_T qubit_b, const std::span<Circuit::Part> parts) {
 
-  if (num_qubits != parts.size()) {
-    throw std::invalid_argument("Must have as many parts as qubits!");
+  if (state_vector.NumQubits() != parts.size()) {
+    throw std::invalid_argument("Number of qubits must match number of parts!");
   }
 
   if (qubit_a < 0 || qubit_a > Circuit::kMaxQubits) {
@@ -99,24 +85,17 @@ std::vector<Complex> ApplySwap(const std::vector<Complex> &in, const Circuit::Gr
                                             Circuit::kMaxQubits, qubit_a));
   }
 
-  const int state_vector_size = bit::TwoPowN(num_qubits);
+  if (qubit_a == qubit_b) return; // We're done !
 
-  if (in.size() != state_vector_size) {
-    throw std::invalid_argument("State vector size must be equal to 2^n, where n is the "
-                                "number of qubits!");
-  }
-
-  if (qubit_a == qubit_b) return in; // We're done !
-
-  // Output state vector
-  std::vector<Complex> out = in;
+  // Output state vector (Copying object)
+  const StateVector out = state_vector;
 
   // Calculate masks for control qubits
   int inclusion_mask = 0;
   int desired_mask = 0;
 
   for (std::size_t i = 0; i < parts.size(); ++i) {
-    const int bit = bit::TwoPowN(i);
+    const int bit = static_cast<int>(bit::TwoPowN(i)); // 2^i
 
     if (parts[i] == Circuit::Part::kControlBit) {
       inclusion_mask |= bit;
@@ -130,7 +109,7 @@ std::vector<Complex> ApplySwap(const std::vector<Complex> &in, const Circuit::Gr
   const int mask_a = bit::TwoPowN(qubit_a);
   const int mask_b = bit::TwoPowN(qubit_b);
 
-  for (int k = 0; k < state_vector_size; ++k) {
+  for (int k = 0; k < out.Size(); ++k) {
     if ((k & inclusion_mask) != desired_mask) continue; // Skip
 
     const auto ath_bit_of_k = bit::GetBit<int>(k, qubit_a);
@@ -140,80 +119,51 @@ std::vector<Complex> ApplySwap(const std::vector<Complex> &in, const Circuit::Gr
       const int k_2 = (k & (~mask_a)) | mask_b; // Turn off bit A, turn on bit B.
 
       // Swap bits
-      out[k_2] = in[k];
-      out[k] = in[k_2];
+      out[k_2] = state_vector[k];
+      out[k] = state_vector[k_2];
     }
   }
 
-  return out;
+  state_vector = out;
 }
 
-std::vector<Complex> SimulateCircuitQubitWise(const Circuit &circuit,
-                                              const std::vector<Complex> &in) {
-
-  static constexpr std::size_t invalid_qubit_index = Circuit::kMaxQubits + 1;
+void ApplyCircuitQubitWise(const Circuit &circuit, StateVector &state_vector) {
 
   const Circuit::GridSize_T num_qubits = circuit.GetNumQubits();
   const Circuit::GridSize_T num_layers = circuit.GetNumLayers();
 
-  std::vector<Complex> state = in;
+  if (state_vector.NumQubits() != num_qubits) {
+    throw std::invalid_argument("State vector size doesn't match number of input qubits!");
+  }
 
   for (Circuit::GridSize_T layer = 0; layer < num_layers; ++layer) {
-    std::vector<const Circuit::Matrix_T *> matrix_list = circuit.GetMatricesInLayer(layer);
-    std::vector<Circuit::Part> parts_list = circuit.GetPartsInLayer(layer);
-
-    /// Indices of swap gates (if they exist)
-    std::array<std::size_t, 2> swap_indices = {{invalid_qubit_index, invalid_qubit_index}};
-
-    for (Circuit::GridSize_T qubit = 0; qubit < num_qubits; ++qubit) {
-      if (parts_list[qubit] == Circuit::Part::kMatrix2x2) {
-        state = QubitWiseMultiply(state, num_qubits, matrix_list[qubit], qubit, parts_list);
-      } else if (parts_list[qubit] == Circuit::Part::kSwap) {
-        const int idx = swap_indices[0] == invalid_qubit_index ? 0 : 1;
-        swap_indices[idx] = qubit;
-      }
-    }
-
-    if (swap_indices[0] != invalid_qubit_index && swap_indices[1] != invalid_qubit_index) {
-      state = ApplySwap(state, num_qubits, swap_indices[0], swap_indices[1], parts_list);
-    }
+    ApplyLayerQubitWise(state_vector, circuit, layer);
   }
-
-  return state;
 }
 
-std::vector<Complex> SimulateLayerQubitWise(
-    const std::vector<Complex> &in, const Circuit::GridSize_T num_qubits,
-    const std::vector<const Circuit::Matrix_T *> &matrix_list,
-    const std::vector<Circuit::Part> &parts_list) {
+void ApplyLayerQubitWise(StateVector &state_vector, const Circuit &circuit,
+                         const Circuit::GridSize_T layer) {
 
-  const auto state_vector_size = bit::TwoPowN(num_qubits);
+  static constexpr std::size_t invalid_qubit_index = Circuit::kMaxQubits + 1;
 
-  if (matrix_list.size() != state_vector_size) {
-    throw std::invalid_argument("Matrix list must be 2^n for number of qubits");
-  }
+  const auto matrix_list = circuit.GetMatricesInLayer(layer);
+  auto parts_list = circuit.GetPartsInLayer(layer);
 
-  if (parts_list.size() != state_vector_size) {
-    throw std::invalid_argument("Parts list must be 2^n for the number of qubits");
-  }
+  /// Indices of swap gates (if they exist)
+  std::array<std::size_t, 2> swap_indices = {{invalid_qubit_index, invalid_qubit_index}};
 
-  std::vector<Complex> out = in;
-
-  for (Circuit::GridSize_T qubit = 0; qubit < num_qubits; ++qubit) {
+  for (Circuit::GridSize_T qubit = 0; qubit < circuit.GetNumQubits(); ++qubit) {
     if (parts_list[qubit] == Circuit::Part::kMatrix2x2) {
-      out = QubitWiseMultiply(in, num_qubits, matrix_list[qubit], qubit, parts_list);
+      ApplyMatrixQubitWise(state_vector, matrix_list[qubit], qubit, parts_list);
+    } else if (parts_list[qubit] == Circuit::Part::kSwap) {
+      const int idx = swap_indices[0] == invalid_qubit_index ? 0 : 1;
+      swap_indices[idx] = qubit;
     }
   }
 
-  return out;
-}
-
-std::vector<Complex> SimulateCircuitQubitWise(const Circuit &circuit) {
-  // Initialize state vector to = |0...0>
-  std::vector<Complex> state(1 << circuit.GetNumQubits(), {0, 0});
-  state[0] = 1;
-
-  return SimulateCircuitQubitWise(circuit, state);
+  if (swap_indices[0] != invalid_qubit_index && swap_indices[1] != invalid_qubit_index) {
+    ApplySwap(state_vector, swap_indices[0], swap_indices[1], parts_list);
+  }
 }
 
 Matrix2D<Complex> ComputeLayerExplicit(const std::vector<Circuit::Part> &parts,

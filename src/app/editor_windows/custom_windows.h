@@ -8,9 +8,11 @@
 #include <bitset>
 
 #include "../resources/texture.h"
+#include "circuit_info_processor.h"
 #include "imgui.h"
 #include "math/constants.h"
 #include "quantum_circuit/circuit.h"
+#include "simulator/state_vector.h"
 
 struct GateButton {
   const char *name = nullptr;
@@ -116,23 +118,20 @@ public:
 
 class CircuitInfoPanel {
 private:
-  using Bitset = std::bitset<Circuit::kMaxQubits>;
+  static constexpr double kBarSize = 0.8;
 
   Circuit *circuit_;
   bool *circuit_dirty_;
-  std::string info_str_;
 
-  std::vector<Complex> state_vector_;
-
-  std::vector<std::string> plot_labels_;
-  std::vector<double> plot_probs_;
+  StateVector state_vector_;
+  ComputedCircuitInfo info_;
 
 public:
   struct {
     bool skip_empty_probs = false; // Disabled by default
   } data;
 
-  explicit CircuitInfoPanel(Circuit *circuit, bool *circuit_dirty) :
+  CircuitInfoPanel(Circuit *circuit, bool *circuit_dirty) :
       circuit_{circuit}, circuit_dirty_{circuit_dirty} {}
 
   void Draw();
