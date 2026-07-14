@@ -12,6 +12,9 @@ add_library(Engine
         math/constants.h
         simulator/simulator.cc
         math/constexpr_math.h
+        math/bitwise_math.h
+        simulator/state_vector.h
+        simulator/state_vector.cc
 )
 
 target_include_directories(Engine PUBLIC

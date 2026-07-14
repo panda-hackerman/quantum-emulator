@@ -10,6 +10,7 @@
 #include <iostream>
 
 #include "../settings_constants.h"
+#include "../theme.h"
 #include "../util/device_adapter_util.h"
 #include "../util/wgpu_string_view_util.h"
 #include "backends/imgui_impl_glfw.h"
@@ -157,7 +158,7 @@ void Application::EndFrame() {
       .resolveTarget = nullptr,
       .loadOp = WGPULoadOp_Clear,
       .storeOp = WGPUStoreOp_Store,
-      .clearValue = kWindowClearColor,
+      .clearValue = theme::kWindowClearColor,
   };
 
   const WGPURenderPassDescriptor render_pass_desc = {

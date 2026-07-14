@@ -4,16 +4,15 @@
 
 #ifndef THEME_H
 #define THEME_H
-#include <cstdint>
 
 #include "imgui.h"
-
+#include "webgpu/webgpu.hpp"
 
 /// Create a new rgb color, with an alpha of 1 (opaque)
 constexpr ImColor RGBColor(const ImU32 color) {
-  const int r = (color >> 16) & 0xFF;
-  const int g = (color >> 8) & 0xFF;
-  const int b = (color) & 0xFF;
+  const int r = static_cast<int>((color >> 16) & 0xFF);
+  const int g = static_cast<int>((color >> 8) & 0xFF);
+  const int b = static_cast<int>((color) & 0xFF);
 
   return ImColor{r, g, b, 0xFF};
 }
@@ -33,27 +32,40 @@ inline constexpr auto kAbsoluteBlackColor = RGBColor(0xFFFFFF);
 inline constexpr auto kTransparentColor = ImColor{0, 0, 0, 0};
 
 inline constexpr auto kWhiteColor = RGBColor(0xECE5E2);
-inline constexpr auto kWhiteColor_Darker = RGBColor(0xECECEC);
-inline constexpr auto kWhiteColor_Darkest = RGBColor(0xD9D8D8);
+inline constexpr auto kWhiteColorDarker = RGBColor(0xECECEC);
+inline constexpr auto kWhiteColorDarkest = RGBColor(0xD9D8D8);
 
 inline constexpr auto kBlackColor = RGBColor(0x161515);
 inline constexpr auto kBlack800Color = RGBColor(0x413C3C);
 inline constexpr auto kGreyColor = RGBColor(0xBEBBC1);
-inline constexpr auto kGreyColor_Dark = RGBColor(0xB1AFB4);
-inline constexpr auto kGreyColor_Darkest = RGBColor(0x8C888C);
+inline constexpr auto kGreyColorDark = RGBColor(0xB1AFB4);
+inline constexpr auto kGreyColorDarkest = RGBColor(0x8C888C);
 inline constexpr auto kRedHighlightColor = RGBColor(0xE07A5F);
-inline constexpr auto kRedHighlightColor_Dark = RGBColor(0xD0745C);
+inline constexpr auto kRedHighlightColorDark = RGBColor(0xD0745C);
 inline constexpr auto kGreenHighlightColor = RGBColor(0x81B29A);
-inline constexpr auto kGreenHighlightColor_Dark = RGBColor(0x7AA791);
+inline constexpr auto kGreenHighlightColorDark = RGBColor(0x7AA791);
 inline constexpr auto kBlueHighlightColor = RGBColor(0x5B618A);
-inline constexpr auto kBlueHighlightColor_Dark = RGBColor(0x585D82);
+inline constexpr auto kBlueHighlightColorDark = RGBColor(0x585D82);
 inline constexpr auto kTurquoiseHighlightColor = RGBColor(0x429EA6);
-inline constexpr auto kTurquoiseHighlightColor_Dark = RGBColor(0x42959C);
+inline constexpr auto kTurquoiseHighlightColorDark = RGBColor(0x42959C);
+
+// WebGPU colors
+static constexpr WGPUColor kWindowClearColor = {100 / 255.0, 149 / 255.0, 237 / 255.0, 1};
 
 // SIZES
-inline constexpr ImVec2 kCircuitButtonDefaultSize = {80, 80};
-inline constexpr float kFontSize = 14;
 
+// Circuit Diagram settings
+inline constexpr ImVec2 kCircuitButtonDefaultSize = {80, 80};
+
+inline constexpr float kCircuitLineWidthH = 12;
+inline constexpr auto kCircuitLineColorH = kBlack800Color;
+inline constexpr float kCircuitLineWidthV = 12;
+inline constexpr auto kCircuitLineColorV = kBlack800Color;
+
+// Font settings
+inline constexpr float kDefaultFontSize = 14;
+
+// General ImGui settings
 inline constexpr ImVec2 kItemInnerSpacing = {8, 6};
 inline constexpr ImVec2 kWindowPadding = {15, 15};
 inline constexpr ImVec2 kFramePadding = {5, 5};

@@ -39,7 +39,6 @@ inline constexpr RowVector<Complex, 2> kBraOne = {{{{0, 1}}}};  ///< = |1>
 inline constexpr ColVector<Complex, 2> kKetZero = {{{{1}, {0}}}}; ///< = <0|
 inline constexpr ColVector<Complex, 2> kKetOne = {{{{0}, {1}}}};  ///< = <0|
 
-
 /* - MATRICES FOR COMMON QUANTUM GATES - */
 
 /// Identity Matrix
@@ -76,6 +75,12 @@ inline constexpr Gate<1> kHadamard = {{{
 inline constexpr Gate<1> kPi8ths = {{{
     {1, 0},
     {0, kRot4},
+}}};
+
+/// Matrix for the S gate
+inline constexpr Gate<1> kPhase = {{{
+    {1, 0},
+    {0, kIm},
 }}};
 
 } // namespace matrix

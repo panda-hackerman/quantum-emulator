@@ -8,10 +8,8 @@
 #include <webgpu/webgpu.hpp>
 
 #include "../editor_windows/editor_window_manager.h"
-#include "../textures/texture.h"
+#include "../resources/texture.h"
 #include "device_window.h"
-
-constexpr WGPUColor kWindowClearColor = {100 / 255.0, 149 / 255.0, 237 / 255.0, 1};
 
 /// The application (singleton)
 class Application {
@@ -21,18 +19,17 @@ private:
   WGPUDevice device_ = nullptr;
   WGPUQueue queue_ = nullptr;
   WGPUSurface surface_ = nullptr;
+  WGPUTextureFormat preferred_format_ = WGPUTextureFormat_Undefined;
 
   DeviceWindow window_{&surface_};
   EditorWindowManager window_manager_{};
   TextureManager texture_manager_{};
 
-  WGPUTextureFormat preferred_format_ = WGPUTextureFormat_Undefined;
+  WGPUTextureView GetNextTextureView();
 
   void BeginFrame();
   void DrawFrame();
   void EndFrame();
-
-  WGPUTextureView GetNextTextureView();
 
   Application() = default;
 
@@ -51,14 +48,21 @@ public:
     return instance;
   }
 
+  const TextureManager &GetTextureManager() { return texture_manager_; }
+
   /**
    * True if the program should continue running.
    * @return False if the GLFW window should close, otherwise true.
    */
   [[nodiscard]] bool ShouldContinue() const noexcept;
-  [[nodiscard]] WGPUSurfaceConfiguration BuildSurfaceConfig(const DeviceWindow &window) const;
 
-  const TextureManager &GetTextureManager() { return texture_manager_; }
+  /**
+   * Build a surface config based on the current window dimensions.
+   * Used when the window is resized
+   * @param window The window
+   * @return The WGPU surface configuration
+   */
+  [[nodiscard]] WGPUSurfaceConfiguration BuildSurfaceConfig(const DeviceWindow &window) const;
 };
 
 #endif // APPLICATION_H

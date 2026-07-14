@@ -25,8 +25,8 @@ private:
   void OnResize(int width, int height);
 
 public:
-  static constexpr int kDefaultWidth = 640;
-  static constexpr int kDefaultHeight = 480;
+  static constexpr int kDefaultWidth = 1280;
+  static constexpr int kDefaultHeight = 720;
   static constexpr const char *kWindowTitle = "Quantum Emulator";
 
   explicit DeviceWindow(WGPUSurface *surface) : surface_ptr_{surface} {}

@@ -11,6 +11,7 @@
 #ifndef SIMULATOR_H
 #define SIMULATOR_H
 #include "quantum_circuit/circuit.h"
+#include "state_vector.h"
 
 /**
  * Simulate the effect of a circuit layer with a single gate and any number of control and/or
@@ -21,36 +22,41 @@
  *
  * @remark Implementation based on McGuffin et al. \cite mcguffin_2025.
  *
- * @param in The input state vector |a>. Size must be 2^n.
- * @param num_qubits The number of qubits (n).
+ * @param state_vector The input state vector |a>. Will be modified in-place.
  * @param matrix The 2x2 unitary matrix representing the gate.
  * @param qubit_index Which qubit this gate is applied to.
  * @param parts A list of parts (indicates where the control bits are). Size must be equal to the
  * number of qubits.
- * @return The state vector after applying the given gate.
  */
-[[nodiscard]] std::vector<Complex> QubitWiseMultiply(const std::vector<Complex> &in,
-                                                     Circuit::GridSize_T num_qubits,
-                                                     const Circuit::Matrix_T *matrix,
-                                                     Circuit::GridSize_T qubit_index,
-                                                     const std::vector<Circuit::Part> &parts);
+void ApplyMatrixQubitWise(StateVector &state_vector, const Circuit::Matrix_T *matrix,
+                          Circuit::GridSize_T qubit_index, std::span<Circuit::Part> parts);
+
+/**
+ * Simulate the effect of a swap gate on a state vector.
+ *
+ * @param state_vector The input state vector. Will be modified in-place.
+ * @param qubit_a The first qubit to swap
+ * @param qubit_b The second qubit to swap
+ * @param parts The list of parts (indicates where the control bits are).
+ */
+void ApplySwap(StateVector &state_vector, Circuit::GridSize_T qubit_a, Circuit::GridSize_T qubit_b,
+               std::span<Circuit::Part> parts);
 
 /**
  * Simulate an entire circuit using the Qubit-wise Multiply Method.
  * @param circuit The circuit to simulate
- * @param in The input to the circuit (the starting state vector)
- * @return The state vector after simulating the circuit.
+ * @param state_vector The input (the starting state vector). Modified in-place.
  */
-[[nodiscard]] std::vector<Complex> SimulateCircuitQubitWise(const Circuit &circuit,
-                                                            const std::vector<Complex> &in);
+void ApplyCircuitQubitWise(const Circuit &circuit, StateVector &state_vector);
 
 /**
- * Simulate an entire circuit using the Qubit-wise Multiply Method.
- * Starts with all qubits initialized to zero.
- * @param circuit The circuit to simulate
- * @return The state vector after simulating the circuit.
+ * Simulate an entire layer using the Qubit-wise Multiply Method
+ * @param state_vector The input state vector
+ * @param circuit The circuit we're simulating
+ * @param layer Which layer?
  */
-[[nodiscard]] std::vector<Complex> SimulateCircuitQubitWise(const Circuit &circuit);
+void ApplyLayerQubitWise(StateVector &state_vector, const Circuit &circuit,
+                         Circuit::GridSize_T layer);
 
 // TODO: Control Bits
 /**

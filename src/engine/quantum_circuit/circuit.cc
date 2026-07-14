@@ -57,12 +57,18 @@ void Circuit::SetSize(const GridSize_T num_qubits, const GridSize_T num_layers) 
   num_layers_ = num_layers;
 }
 
+void Circuit::Clear() {
+  parts_array_.fill(Part::kEmpty);
+  id_to_matrix_.Clear();
+}
+
 Circuit::Part Circuit::GetPartTypeAt(const GridSize_T qubit, const GridSize_T layer) const {
   AssertInLimit(qubit, layer);
   return GetPartTypeUnsafe(qubit, layer);
 }
 
-const Circuit::Matrix_T *Circuit::GetMatrixAt(const GridSize_T qubit, const GridSize_T layer) const {
+const Circuit::Matrix_T *Circuit::GetMatrixAt(const GridSize_T qubit,
+                                              const GridSize_T layer) const {
   AssertInLimit(qubit, layer);
   return GetMatrixUnsafe(qubit, layer);
 }
@@ -72,7 +78,7 @@ Circuit::Part Circuit::GetPartTypeUnsafe(const GridSize_T qubit, const GridSize_
 }
 
 const Circuit::Matrix_T *Circuit::GetMatrixUnsafe(const GridSize_T qubit,
-                                                const GridSize_T layer) const {
+                                                  const GridSize_T layer) const {
   if (id_to_matrix_.Contains(IndexOf(qubit, layer))) {
     return id_to_matrix_.Get(IndexOf(qubit, layer));
   }
@@ -103,4 +109,55 @@ std::vector<const Circuit::Matrix_T *> Circuit::GetMatricesInLayer(const GridSiz
   }
 
   return out;
+}
+
+bool Circuit::IsValidLayer(const std::vector<Part> &layer) {
+  const std::size_t num_qubits = layer.size();
+
+  if (num_qubits > kMaxQubits) return false;
+  if (num_qubits < kMinQubits) return false;
+
+  int num_swaps = 0;
+  int num_matrices = 0;
+  int total_not_empty = 0; /* How many (non-empty) parts */
+
+  for (const Part part : layer) {
+    if (part == Part::kSwap) num_swaps++;
+    if (part == Part::kMatrix2x2) num_matrices++;
+    if (part != Part::kEmpty) total_not_empty++;
+
+    if (num_swaps > 2) return false;
+  }
+
+  return std::ranges::all_of(layer.begin(), layer.end(), [&](const Part part) {
+    switch (part) {
+      case Part::kMatrix2x2:
+        return num_swaps == 0;
+      case Part::kSwap:
+        return num_matrices == 0;
+      case Part::kMeasure:
+        return total_not_empty == 1;
+      default:
+        return true;
+    }
+  });
+}
+
+bool Circuit::ExistsValidSwapInLayer(const GridSize_T layer) const {
+  int num_swaps = 0;
+
+  for (GridSize_T qubit = 0; qubit < num_qubits_; ++qubit) {
+    if (GetPartTypeUnsafe(qubit, layer) == Part::kSwap) num_swaps++;
+    if (num_swaps >= 2) return true;
+  }
+
+  return false;
+}
+
+bool Circuit::ExistsInLayer(const Part part, const GridSize_T layer) const {
+  for (GridSize_T qubit = 0; qubit < num_qubits_; ++qubit) {
+    if (GetPartTypeUnsafe(qubit, layer) == part) return true;
+  }
+
+  return false;
 }

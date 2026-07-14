@@ -10,7 +10,6 @@
 
 #include "collections/sparse_set.h"
 #include "math/constants.h"
-#include "math/constexpr_math.h"
 
 class Circuit {
 public:
@@ -31,7 +30,11 @@ public:
     kMeasure,
     kSwap,
   };
-  
+
+  [[nodiscard]] static constexpr bool IsControlBit(const Part part) {
+    return part == Part::kControlBit || part == Part::kAntiControlBit;
+  }
+
   static constexpr GridSize_T kMinQubits = 1; ///< Minimum allowed qubits in a circuit
   static constexpr GridSize_T kMaxQubits = 8; ///< Maximum allowed qubits in a circuit
   static constexpr GridSize_T kMinDepth = 1; ///< Minimum allowed layers (aka circuit depth)
@@ -89,16 +92,18 @@ public:
   Circuit(const GridSize_T qubits, const GridSize_T layers) :
       num_qubits_{qubits}, num_layers_{layers}, parts_array_{} {}
 
-  void AddEmpty(GridSize_T qubit, GridSize_T layer);
-  void AddGate(GridSize_T qubit, GridSize_T layer, const Matrix_T *matrix);
-  void AddControlBit(GridSize_T qubit, GridSize_T layer);
-  void AddAntiControlBit(GridSize_T qubit, GridSize_T layer);
-  void AddMeasurement(GridSize_T qubit, GridSize_T layer);
-  void AddSwap(GridSize_T qubit, GridSize_T layer);
+  void AddEmpty(GridSize_T qubit, GridSize_T layer); /// Set to empty
+  void AddGate(GridSize_T qubit, GridSize_T layer, const Matrix_T *matrix); /// Add a gate
+  void AddControlBit(GridSize_T qubit, GridSize_T layer); /// Add a control bit
+  void AddAntiControlBit(GridSize_T qubit, GridSize_T layer); /// Add an anti-control bit
+  void AddMeasurement(GridSize_T qubit, GridSize_T layer); /// Add a measurement gate
+  void AddSwap(GridSize_T qubit, GridSize_T layer); /// Add a swap gate
 
   void SetNumQubits(GridSize_T num_qubits);
   void SetNumLayers(GridSize_T num_layers);
   void SetSize(GridSize_T num_qubits, GridSize_T num_layers);
+
+  void Clear();
 
   [[nodiscard]] GridSize_T GetNumQubits() const noexcept { return num_qubits_; }
   [[nodiscard]] GridSize_T GetNumLayers() const noexcept { return num_layers_; }
@@ -115,6 +120,28 @@ public:
   [[nodiscard]] std::vector<Part> GetPartsInLayer(GridSize_T layer) const;
 
   [[nodiscard]] std::vector<const Matrix_T *> GetMatricesInLayer(GridSize_T layer) const;
+
+  /**
+   * Check for valid swaps
+   * @param layer The layer to check
+   * @return True if there are at least 2 swap parts in this layer
+   */
+  [[nodiscard]] bool ExistsValidSwapInLayer(GridSize_T layer) const;
+
+  /**
+   * Check if a part exists in a layer
+   * @param part The part to check for
+   * @param layer The layer to check
+   * @return True if the part exists in the layer
+   */
+  [[nodiscard]] bool ExistsInLayer(Part part, GridSize_T layer) const;
+
+  /**
+   * Check if this layer is valid
+   * @param layer The parts in the layer to check
+   * @return True if this is a valid arrangement.
+   */
+  [[nodiscard]] static bool IsValidLayer(const std::vector<Part>& layer);
 
   /**
    * Builds a simple example circuit, which looks like:

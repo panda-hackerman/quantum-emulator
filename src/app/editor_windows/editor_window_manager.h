@@ -29,15 +29,9 @@ private:
   CircuitPalette circuit_palette_{};
 
   bool is_initialized_ = false;
-  bool circuit_info_dirty_ = false;
+  bool circuit_info_dirty_ = true;
 
 public:
-#ifndef __ESCRIPTEN__
-  static constexpr const char *kImGuiIniPath = "data/layouts/imgui.ini";
-#else
-  static constexpr const char *kImGuiIniPath = nullptr; // No ini file on web...
-#endif
-
   void Init();
   void SetupWindows();
   void DrawWindows();
