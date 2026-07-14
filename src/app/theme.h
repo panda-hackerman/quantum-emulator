@@ -6,13 +6,13 @@
 #define THEME_H
 
 #include "imgui.h"
-
+#include "webgpu/webgpu.hpp"
 
 /// Create a new rgb color, with an alpha of 1 (opaque)
 constexpr ImColor RGBColor(const ImU32 color) {
-  const int r = (color >> 16) & 0xFF;
-  const int g = (color >> 8) & 0xFF;
-  const int b = (color) & 0xFF;
+  const int r = static_cast<int>((color >> 16) & 0xFF);
+  const int g = static_cast<int>((color >> 8) & 0xFF);
+  const int b = static_cast<int>((color) & 0xFF);
 
   return ImColor{r, g, b, 0xFF};
 }

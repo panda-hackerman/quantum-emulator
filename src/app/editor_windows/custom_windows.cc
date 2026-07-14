@@ -49,8 +49,10 @@ void CircuitEditor::Draw() {
   const ImGuiStyle *style = &ImGui::GetStyle();
 
   ImGui::PushItemWidth(ImGui::GetFontSize() * 6);
+  // ImGui::SetNextItemWidth(ImGui::GetFrameHeight());
   ImGui::InputInt("Qubits", &data.num_qubits);
   ImGui::SameLine();
+  // ImGui::SetNextItemWidth(ImGui::GetFrameHeight());
   ImGui::InputInt("Layers", &data.num_layers);
   ImGui::PopItemWidth();
 
@@ -58,27 +60,47 @@ void CircuitEditor::Draw() {
   UpdateCircuitSize();
 
   ImGui::SameLine();
-  if (ImGui::Button("Clear Circuit")) {
+  if (ImGui::Button("Clear")) {
     ClearCircuit();
   }
 
   // Table
-  constexpr ImGuiTableFlags table_flags =
-      ImGuiTableFlags_Borders | ImGuiTableFlags_NoHostExtendX | ImGuiTableFlags_SizingFixedFit;
-
   const ImVec2 button_size = ScaleDPI(theme::kCircuitButtonDefaultSize);
 
-  // Actually draw
+  /* We have two child windows
+   * - Inner child will grow or shrink to fit the size of the table.
+   * - Outer child will grow or shrink to fit the size of the inner child, but will never exceed the
+   *    size of the parent window. Since it has scrolling enabled, this enables scrolling for the
+   *    inner child (thus the table) via this window.
+   * This seems super unnecessary, but ImGui table stuff is fucked and I can't come up with a
+   * better solution that doesn't force the table to grow to the size of the parent window (which
+   * looks really weird).
+   */
+  ImGui::SetNextWindowSizeConstraints({0.0f, 0.0f}, ImGui::GetContentRegionAvail());
+  ImGui::BeginChild(
+      "Outer Child", {0.0f, 0.0f},
+      ImGuiChildFlags_AutoResizeX | ImGuiChildFlags_AutoResizeY | ImGuiChildFlags_NavFlattened,
+      ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_HorizontalScrollbar);
+  ImGui::BeginChild(
+      "Inner Child", {0.0f, 0.0f},
+      ImGuiChildFlags_AutoResizeX | ImGuiChildFlags_AutoResizeY | ImGuiChildFlags_NavFlattened,
+      ImGuiWindowFlags_NoSavedSettings);
+
+  constexpr ImGuiTableFlags table_flags =
+      ImGuiTableFlags_Borders | ImGuiTableFlags_NoHostExtendX | ImGuiTableFlags_NoSavedSettings |
+      ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_NoBordersInBody;
+  constexpr ImGuiTableColumnFlags col_flags =
+      ImGuiTableColumnFlags_NoReorder | ImGuiTableColumnFlags_NoResize;
+
   if (ImGui::BeginTable("Circuit Diagram", data.num_layers + 1, table_flags)) {
 
-    const ImGuiTable *table = ImGui::GetCurrentTable();
+    // ImGui::TableSetupScrollFreeze(1, 1); // FIXME: Scroll freeze doesn't work
 
     // Setup Columns
-    ImGui::TableSetupColumn("", ImGuiTableColumnFlags_NoReorder | ImGuiTableColumnFlags_NoResize);
+    ImGui::TableSetupColumn("Qubit Num.", col_flags | ImGuiTableColumnFlags_NoHeaderLabel);
 
     for (int i = 0; i < data.num_layers; ++i) {
-      ImGui::TableSetupColumn(std::format("t{}", i).data(),
-                              ImGuiTableColumnFlags_NoReorder | ImGuiTableColumnFlags_NoResize);
+      ImGui::TableSetupColumn(std::format("t{}", i).data(), col_flags);
     }
 
     ImGui::TableHeadersRow();
@@ -95,25 +117,6 @@ void CircuitEditor::Draw() {
         ImGui::Text("q%d", qubit);
       }
 
-      /* [DRAW HORIZONTAL LINES] */ {
-        const ImGuiTableColumn *column = &table->Columns[0];
-        const float min_x = table->OuterRect.Min.x; /* Left of table  */
-        const float max_x = table->OuterRect.Max.x; /* Right of table */
-        const float top_y = table->OuterRect.Max.y; /* Top of table   */
-        const float col_0_w = column->WidthGiven; /* Width of column 0 */ // FIXME: Fragile?
-        const float header_height = !table->IsUsingHeaders ? 0 : ImGui::TableGetHeaderRowHeight();
-        const float button_height = button_size.y + (style->CellPadding.y * 2); /* Incl. padding */
-
-        const float start_y = top_y + header_height + (button_size.y / 2) + style->CellPadding.y;
-        const float start_x = min_x + col_0_w + (style->CellPadding.x * 2) + 1.0f;
-
-        const float y_pos = start_y + (qubit * button_height);
-        const float thickness = ScaleDPI(theme::kCircuitLineWidthH);
-
-        ImGui::GetWindowDrawList()->AddLineH(start_x, max_x, y_pos, theme::kBlack800Color,
-                                             thickness);
-      }
-
       // Column 1 to N+1
       for (Circuit::GridSize_T layer = 0; std::cmp_less(layer, data.num_layers); ++layer) {
         ImGui::PushID(layer);
@@ -123,25 +126,36 @@ void CircuitEditor::Draw() {
 
         const GateButton *gate_button = buttons_arr_[qubit][layer];
 
-        //[DRAW VERTICAL LINES]
-        if (gate_button->part != Circuit::Part::kEmpty &&
-            gate_button->part != Circuit::Part::kMeasure) {
+        /* [DRAW HORIZONTAL/ VERTICAL LINES]*/ {
           const ImVec2 cursor_pos = ImGui::GetCursorScreenPos();
-          const float x_pos = cursor_pos.x + (button_size.x / 2);
-          const float y_pos = cursor_pos.y + (button_size.y / 2);
-          const float button_height = button_size.y + (style->CellPadding.y * 2); /* Incl. padding*/
+          const float x_mid_pos = cursor_pos.x + (button_size.x / 2);
+          const float y_mid_pos = cursor_pos.y + (button_size.y / 2);
 
+          const float thickness_h = ScaleDPI(theme::kCircuitLineWidthH);
+          const float thickness_v = ScaleDPI(theme::kCircuitLineWidthV);
+
+          // Size including padding
+          const float button_height = button_size.y + (style->CellPadding.y * 2);
+          const float button_width = button_size.x + (style->CellPadding.x * 2);
+
+          // Horizontal lines
+          const float x_left = x_mid_pos - (button_width / 2) - 1;
+          const float x_right = x_mid_pos + (button_width / 2);
+
+          ImGui::GetWindowDrawList()->AddLineH(x_left, x_right, y_mid_pos,
+                                               theme::kCircuitLineColorH, thickness_h);
+
+          // Vertical lines - (for each qubit below)
           for (Circuit::GridSize_T q = qubit + 1; std::cmp_less(q, data.num_qubits); ++q) {
             const GateButton *other = buttons_arr_[q][layer];
 
             if (!ShouldConnectGates(gate_button->part, other->part, layer)) continue;
 
             const float num_down = static_cast<float>(q - qubit); /* How many qubits down are we? */
-            const float other_y_pos = y_pos + (button_height * num_down);
-            const float thickness = ScaleDPI(theme::kCircuitLineWidthV);
+            const float other_y_pos = y_mid_pos + (button_height * num_down);
 
-            ImGui::GetWindowDrawList()->AddLineV(x_pos, y_pos, other_y_pos,
-                                                 theme::kCircuitLineColorV, thickness);
+            ImGui::GetWindowDrawList()->AddLineV(x_mid_pos, y_mid_pos, other_y_pos,
+                                                 theme::kCircuitLineColorV, thickness_v);
             break; // Only draw one line
           }
         }
@@ -232,7 +246,23 @@ void CircuitEditor::Draw() {
     }
 
     ImGui::EndTable(); // Circuit Diagram
+
+    /* Draw border for first (qubit) column */ {
+      ImGuiContext *ctx = ImGui::GetCurrentContext();
+      ImGuiTable *table = ctx->Tables.GetByKey(ImGui::GetID("Circuit Diagram"));
+      ImGuiTableColumn *first_col = &table->Columns[0];
+      const float header_height = table->IsUsingHeaders ? ImGui::TableGetHeaderRowHeight(table) : 0;
+
+      const auto max_x = first_col->MaxX;
+      const auto min_y = table->InnerRect.Min.y;
+      const auto max_y = table->InnerRect.Max.y;
+      const auto border_color = table->BorderColorLight;
+      table->InnerWindow->DrawList->AddLineV(max_x, (min_y + header_height), max_y, border_color, 1);
+    }
   }
+
+  ImGui::EndChild(); // Inner Child
+  ImGui::EndChild(); // Outer Child
 }
 
 void CircuitEditor::ClearCircuit() {

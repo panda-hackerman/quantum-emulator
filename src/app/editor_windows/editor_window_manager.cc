@@ -107,7 +107,8 @@ void EditorWindowManager::SetupWindows() {
   windows_.emplace_back(EditorWindow{
       .name = "Circuit Diagram",
       .on_draw = [&] { circuit_window_.Draw(); },
-      .flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_AlwaysAutoResize,
+      .flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_AlwaysAutoResize |
+               ImGuiWindowFlags_HorizontalScrollbar,
       .can_close = false,
   });
 
