@@ -138,8 +138,8 @@ This project uses the following third-party libraries:
 - [GLFW](https://github.com/glfw/glfw) ([Zlib License](https://github.com/glfw/glfw/blob/master/LICENSE.md))
 - [GLFW WebGPU Extension](https://github.com/eliemichel/glfw3webgpu) ([MIT License](https://github.com/eliemichel/glfw3webgpu/blob/main/LICENSE.txt))
 - [Google Test](https://github.com/google/googletest) ([BSD 3-Clause "New" or "Revised" License](https://github.com/google/googletest/blob/main/LICENSE))
+- [stb](https://github.com/nothings/stb) image ([Unlicense](https://github.com/nothings/stb?tab=License-1-ov-file))
 - [WebGPU Distribution](https://github.com/eliemichel/WebGPU-distribution) ([MIT License](https://github.com/eliemichel/WebGPU-distribution/blob/main/LICENSE.txt))
-
 
 The WebGPU distribution can be configured to use the following third-party backends (though only one is used at once):
 - [Dawn](https://dawn.googlesource.com/dawn) ([Apache 2.0 License](https://dawn.googlesource.com/dawn/+/HEAD/LICENSE))
