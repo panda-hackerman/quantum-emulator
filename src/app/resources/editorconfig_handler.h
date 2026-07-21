@@ -31,7 +31,7 @@ inline bool InitFilePath() {
     }
 
     return true;
-  } catch (std::exception ex) {
+  } catch (std::exception &ex) {
     std::cerr << "Couldn't create editor config directory: " << ex.what();
     return false;
   }
