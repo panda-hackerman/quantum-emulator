@@ -68,7 +68,7 @@ class CircuitEditor {
 private:
   Circuit *circuit_;
   bool *circuit_dirty_;
-  const GateButton *buttons_arr_[Circuit::kMaxQubits][Circuit::kMaxDepth]; // TODO: Dynamic?
+  const GateButton *buttons_arr_[Circuit::kMaxQubits][Circuit::kMaxDepth];
 
   /* Drag and drop payload types */
   static constexpr auto kPayloadTypeSwap = "BUTTON_SWAP";
