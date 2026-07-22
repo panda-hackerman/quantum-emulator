@@ -5,8 +5,6 @@
 #ifndef CUSTOM_WINDOWS_H
 #define CUSTOM_WINDOWS_H
 
-#include <bitset>
-
 #include "../resources/texture.h"
 #include "circuit_info_processor.h"
 #include "imgui.h"
@@ -96,7 +94,10 @@ public:
   void Draw();
   void UpdateCircuitSize();
   void ClearCircuit();
+
   void Set(Circuit::GridSize_T qubit, Circuit::GridSize_T layer, const GateButton *button);
+
+  [[nodiscard]] const GateButton *Get(Circuit::GridSize_T qubit, Circuit::GridSize_T layer) const;
 
   void ReadFromCircuit();
 
@@ -109,6 +110,9 @@ public:
 
   [[nodiscard]] bool IsValidSet(Circuit::GridSize_T qubit, Circuit::GridSize_T layer,
                                 Circuit::Part part) const;
+
+  [[nodiscard]] bool IsQubitEmpty(Circuit::GridSize_T qubit) const;
+  [[nodiscard]] bool IsLayerEmpty(Circuit::GridSize_T layer) const;
 };
 
 class CircuitPalette {

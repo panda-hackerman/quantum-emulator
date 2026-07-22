@@ -8,12 +8,12 @@
 
 #include <filesystem>
 
+#include "../application/application.h"
 #include "../resources/editorconfig_handler.h"
 #include "../theme.h"
 #include "custom_windows.h"
 #include "imgui_internal.h"
 #include "implot.h"
-#include "quantum_circuit/circuit.h"
 
 void EditorWindowManager::Init() {
   if (is_initialized_) return;
@@ -24,10 +24,10 @@ void EditorWindowManager::Init() {
 
   SetImGuiStyle();
 
-  InitFilePath();
+  editorconfig::Init();
 
   ImGuiIO &io = ImGui::GetIO();
-  io.IniFilename = kImGuiIniPath;
+  io.IniFilename = editorconfig::kPath;
   io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
   io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
   io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
@@ -101,7 +101,7 @@ void EditorWindowManager::DrawWindows() {
 
 void EditorWindowManager::SetupWindows() {
   windows_.clear();
-  circuit_ = Circuit::BuildExampleCircuit();
+  // circuit_ = Circuit::BuildExampleCircuit();
 
   // Build windows
   windows_.emplace_back(EditorWindow{
@@ -131,8 +131,7 @@ void SetImGuiStyle() {
   ImVec4 *colors = style->Colors;
 
   // Font
-  // io->Fonts->AddFontDefaultVector(); // ProggyForever font
-  io->Fonts->AddFontFromFileTTF(RESOURCE_DIR "/fonts/cmr10.ttf", theme::kDefaultFontSize);
+  io->Fonts->AddFontFromFileTTF(theme::kFontPath, theme::kDefaultFontSize);
 
   // DPI Aware
   io->ConfigDpiScaleFonts = true;

@@ -9,12 +9,15 @@
 
 #include <iostream>
 
+#include "../resources/editorconfig_circuit.h"
+#include "../resources/editorconfig_handler.h"
 #include "../settings_constants.h"
 #include "../theme.h"
 #include "../util/device_adapter_util.h"
 #include "../util/wgpu_string_view_util.h"
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_wgpu.h"
+#include "imgui_internal.h"
 
 bool Application::Init() {
 
@@ -215,6 +218,14 @@ void Application::Terminate() {
   std::cout << "Terminating the program..." << '\n';
 
   if (is_running_) {
+    try {
+      editorconfig::SaveToDiskManual(); // Force save on close
+    } catch (std::exception &ex) {
+      std::cerr << "Failed to save editor config: " << ex.what() << std::endl;
+    } catch (...) {
+      std::cerr << "Failed to save editor config!" << std::endl;
+    }
+
     wgpuInstanceRelease(instance_);
     wgpuSurfaceUnconfigure(surface_);
     wgpuQueueRelease(queue_);

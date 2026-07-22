@@ -6,10 +6,7 @@
 #define WINDOW_MANAGER_H
 
 #include <webgpu/webgpu.hpp>
-
 #include "custom_windows.h"
-#include "imgui.h"
-#include "quantum_circuit/circuit.h"
 
 struct EditorWindow {
   const char *name;
@@ -23,7 +20,7 @@ class EditorWindowManager {
 private:
   std::vector<EditorWindow> windows_;
 
-  Circuit circuit_ = Circuit::BuildExampleCircuit();
+  Circuit circuit_ = Circuit{3, 4};
   CircuitEditor circuit_window_{&circuit_, &circuit_info_dirty_};
   CircuitInfoPanel circuit_info_{&circuit_, &circuit_info_dirty_};
   CircuitPalette circuit_palette_{};
@@ -36,6 +33,12 @@ public:
   void SetupWindows();
   void DrawWindows();
   void Terminate();
+
+  [[nodiscard]] bool IsInitialized() const { return  is_initialized_; }
+
+  [[nodiscard]] CircuitEditor &GetCircuitWindow() { return circuit_window_; }
+  [[nodiscard]] CircuitInfoPanel &GetCircuitInfo() { return circuit_info_; }
+  [[nodiscard]] CircuitPalette &GetCircuitPalette() { return circuit_palette_; }
 
   ~EditorWindowManager() { Terminate(); }
 };

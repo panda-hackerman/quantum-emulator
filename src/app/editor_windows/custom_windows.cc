@@ -293,6 +293,16 @@ void CircuitEditor::UpdateCircuitSize() {
   }
 }
 
+const GateButton *CircuitEditor::Get(const Circuit::GridSize_T qubit,
+                                     const Circuit::GridSize_T layer) const {
+
+  if (qubit <= Circuit::kMaxQubits && layer <= Circuit::kMaxDepth) {
+    return buttons_arr_[qubit][layer];
+  }
+
+  return &gate::kEmpty;
+}
+
 void CircuitEditor::Set(const Circuit::GridSize_T qubit, const Circuit::GridSize_T layer,
                         const GateButton *button) {
   if (circuit_ == nullptr) return;
@@ -421,6 +431,41 @@ bool CircuitEditor::IsValidSet(const Circuit::GridSize_T qubit, const Circuit::G
   parts.at(qubit) = part;
 
   return Circuit::IsValidLayer(parts);
+}
+
+bool CircuitEditor::IsQubitEmpty(Circuit::GridSize_T qubit) const {
+  if (qubit > Circuit::kMaxQubits) {
+    throw std::out_of_range(std::format("Maximum qubits is %d, got %d!", Circuit::kMaxQubits, qubit));
+  }
+
+  bool out = true;
+
+  for (Circuit::GridSize_T layer = 0; layer < Circuit::kMaxDepth; ++layer) {
+    if (buttons_arr_[qubit][layer]->part != Circuit::Part::kEmpty) {
+      out = false;
+      break;
+    }
+  }
+
+  return out;
+}
+
+bool CircuitEditor::IsLayerEmpty(Circuit::GridSize_T layer) const {
+
+  if (layer > Circuit::kMaxDepth) {
+    throw std::out_of_range(std::format("Maximum depth is %d, got %d!", Circuit::kMaxDepth, layer));
+  }
+
+  bool out = true;
+
+  for (Circuit::GridSize_T qubit = 0; qubit < Circuit::kMaxQubits; ++qubit) {
+    if (buttons_arr_[qubit][layer]->part != Circuit::Part::kEmpty) {
+      out = false;
+      break;
+    }
+  }
+
+  return out;
 }
 
 /* --------------- CIRCUIT PALETTE ---------------*/

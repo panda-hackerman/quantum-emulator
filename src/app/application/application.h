@@ -48,6 +48,7 @@ public:
     return instance;
   }
 
+  EditorWindowManager &GetWindowManager() { return window_manager_; }
   const TextureManager &GetTextureManager() { return texture_manager_; }
 
   /**
