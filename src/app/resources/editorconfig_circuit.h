@@ -16,10 +16,8 @@ namespace editorconfig::circuit {
 namespace internal {
 #ifndef _MSC_VER
 #define SCAN_FUNC sscanf
-// inline auto scan_func = sscanf;
 #else
 #define SCAN_FUNC sscanf_s
-// inline auto scan_func = sscanf_s;
 #endif
 } // namespace internal
 
@@ -43,13 +41,13 @@ static void ReadLine(ImGuiContext *, ImGuiSettingsHandler *, void *entry, const 
   char button_name[50] = {};
 
   // "Evil" use of sscanf but input streams make this 1 million times more annoying.
-  if (sscanf_s(line, "NumQubits=%d", &num_qubits)) {
+  if (SCAN_FUNC(line, "NumQubits=%d", &num_qubits)) {
     editor.data.num_qubits = num_qubits;
     editor.UpdateCircuitSize();
-  } else if (sscanf_s(line, "NumLayers=%d", &num_layers)) {
+  } else if (SCAN_FUNC(line, "NumLayers=%d", &num_layers)) {
     editor.data.num_layers = num_layers;
     editor.UpdateCircuitSize();
-  } else if (sscanf_s(line, "(q%d,t%d)=%50c", &qubit, &layer, button_name, 50)) {
+  } else if (SCAN_FUNC(line, "(q%d,t%d)=%50c", &qubit, &layer, button_name, 50)) {
     std::string str = button_name;
 
     const auto button_itr = std::ranges::find_if(

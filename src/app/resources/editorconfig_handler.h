@@ -9,10 +9,10 @@
 #include <filesystem>
 #include <iostream>
 
-#include "imgui.h"
-#endif // __EMSCRIPTEN__
 #include "editorconfig_circuit.h"
+#include "imgui.h"
 #include "imgui_internal.h"
+#endif // __EMSCRIPTEN__
 
 /// Editor Config (i.e. imgui.ini, by default) settings
 namespace editorconfig {
@@ -48,16 +48,18 @@ inline bool InitFilePath() {
 }
 
 inline void Init() {
-
+#ifndef __EMSCRIPTEN__
   // Add custom settings
   const ImGuiSettingsHandler circuit_handler = circuit::BuildHandler();
   ImGui::AddSettingsHandler(&circuit_handler);
 
   // Create folders for file path
   InitFilePath();
+#endif
 }
 
 inline void SaveToDiskManual() {
+#ifndef __EMSCRIPTEN__
   const ImGuiContext *ctx = ImGui::GetCurrentContext();
   const ImGuiIO *io = &ImGui::GetIO();
 
@@ -66,8 +68,9 @@ inline void SaveToDiskManual() {
   if (ctx->SettingsLoaded && io->IniFilename != nullptr) {
     ImGui::SaveIniSettingsToDisk(filename);
   }
+#endif
 }
 
-} // namespace econfig
+} // namespace editorconfig
 
 #endif // EDITORCONFIG_HANDLER_H
