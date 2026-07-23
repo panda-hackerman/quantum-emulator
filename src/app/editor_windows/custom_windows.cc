@@ -4,20 +4,16 @@
 
 #include "custom_windows.h"
 
-#include <bitset>
-#include <iostream>
 #include <numeric>
 #include <utility>
 
 #include "../application/application.h"
 #include "../theme.h"
-#include "imgui.h"
+#include "editor_window_manager.h"
 #include "imgui_internal.h"
 #include "implot.h"
-#include "simulator/simulator.h"
 
-/* --------------- MISC ---------------*/
-
+/* --------------- UTIL --------------- */
 /**
  * Scale a Vec2D by the current DPI.
  * @param vec2 The size to scale
@@ -42,26 +38,48 @@ float ScaleDPI(const float x) {
   return x * dpi;
 }
 
-/* --------------- CIRCUIT EDITOR ---------------*/
+namespace editor::circuit {
+/* --------------- EDITOR WINDOWS --------------- */
+EditorWindow main_window = {
+    .name = "Circuit Diagram Editor",
+    .on_draw = [] { DrawEditor(); },
+    .flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_HorizontalScrollbar,
+    .can_close = false,
+};
 
-void CircuitEditor::Draw() {
+EditorWindow info_window = {
+    .name = "Circuit Info",
+    .on_draw = [] { DrawInfo(); },
+    .can_close = false,
+};
+
+EditorWindow palette_window = {
+    .name = "Circuits",
+    .on_draw = [] { DrawPalette(); },
+    .can_close = false,
+};
+
+/* --------------- CIRCUIT EDITOR --------------- */
+
+void DrawEditor() {
   const TextureManager &texture_manager = Application::Instance().GetTextureManager();
   const ImGuiStyle *style = &ImGui::GetStyle();
 
   ImGui::PushItemWidth(ImGui::GetFontSize() * 6);
-  // ImGui::SetNextItemWidth(ImGui::GetFrameHeight());
-  ImGui::InputInt("Qubits", &data.num_qubits);
+  ImGui::InputInt("Qubits", &gui_data.num_qubits);
   ImGui::SameLine();
-  // ImGui::SetNextItemWidth(ImGui::GetFrameHeight());
-  ImGui::InputInt("Layers", &data.num_layers);
+  ImGui::InputInt("Layers", &gui_data.num_layers);
   ImGui::PopItemWidth();
 
-  // Update Size
   UpdateCircuitSize();
+  const GridSize num_qubits = static_cast<GridSize>(gui_data.num_qubits);
+  const GridSize num_layers = static_cast<GridSize>(gui_data.num_layers);
+
+  ImGui::Checkbox("Qubit Info", &gui_data.show_qubit_info);
 
   ImGui::SameLine();
   if (ImGui::Button("Clear")) {
-    ClearCircuit();
+    ClearEditor();
   }
 
   // Table
@@ -92,39 +110,42 @@ void CircuitEditor::Draw() {
   constexpr ImGuiTableColumnFlags col_flags =
       ImGuiTableColumnFlags_NoReorder | ImGuiTableColumnFlags_NoResize;
 
-  if (ImGui::BeginTable("Circuit Diagram", data.num_layers + 1, table_flags)) {
+  // Qubit label column + layers + qubit info
+  const int num_table_cols = num_layers + 1 + (gui_data.show_qubit_info ? 1 : 0);
+
+  if (ImGui::BeginTable("Circuit Diagram", num_table_cols, table_flags)) {
 
     // ImGui::TableSetupScrollFreeze(1, 1); // FIXME: Scroll freeze doesn't work
 
     // Setup Columns
     ImGui::TableSetupColumn("Qubit Num.", col_flags | ImGuiTableColumnFlags_NoHeaderLabel);
 
-    for (int i = 0; i < data.num_layers; ++i) {
+    for (int i = 0; std::cmp_less(i , num_layers); ++i) {
       ImGui::TableSetupColumn(std::format("t{}", i).data(), col_flags);
     }
 
     ImGui::TableHeadersRow();
 
     // Loop over actual grid
-    for (Circuit::GridSize_T qubit = 0; std::cmp_less(qubit, data.num_qubits); ++qubit) {
+    for (Circuit::GridSize_T qubit = 0; qubit < num_qubits; ++qubit) {
 
       ImGui::PushID(qubit);
+      ImGui::TableNextRow();
 
       /* [COLUMN 0 - LABELS] */ {
-        ImGui::TableNextRow();
         ImGui::TableSetColumnIndex(0);
         ImGui::AlignTextToFramePadding();
         ImGui::Text("q%d", qubit);
       }
 
-      // Column 1 to N+1
-      for (Circuit::GridSize_T layer = 0; std::cmp_less(layer, data.num_layers); ++layer) {
+      // [COLUMN 1 -> N+1 - Qubits]
+      for (Circuit::GridSize_T layer = 0; layer < num_layers; ++layer) {
         ImGui::PushID(layer);
         ImGui::TableSetColumnIndex(layer + 1);
 
         ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
 
-        const GateButton *gate_button = buttons_arr_[qubit][layer];
+        const GateButton *gate_button = editor_data.buttons_arr[qubit][layer];
 
         /* [DRAW HORIZONTAL/ VERTICAL LINES]*/ {
           const ImVec2 cursor_pos = ImGui::GetCursorScreenPos();
@@ -146,9 +167,9 @@ void CircuitEditor::Draw() {
                                                theme::kCircuitLineColorH, thickness_h);
 
           // Vertical lines - (for each qubit below)
-          for (Circuit::GridSize_T q = qubit + 1; std::cmp_less(q, data.num_qubits); ++q) {
-            const GateButton *other = buttons_arr_[q][layer];
+          for (Circuit::GridSize_T q = qubit + 1; std::cmp_less(q, num_qubits); ++q) {
 
+            const GateButton *other = editor_data.buttons_arr[q][layer];
             if (!ShouldConnectGates(gate_button->part, other->part, layer)) continue;
 
             const float num_down = static_cast<float>(q - qubit); /* How many qubits down are we? */
@@ -181,11 +202,11 @@ void CircuitEditor::Draw() {
         ImGui::PopStyleColor(3); // ImGuiCol_Button[Hovered/Active] ...
 
         // DRAG AND DROP / SOURCE
-        if (gate_button->part != Circuit::Part::kEmpty) {
+        if (gate_button->part != Part::kEmpty) {
           if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)) {
             GateSwapPayload payload = {qubit, layer};
 
-            ImGui::SetDragDropPayload("BUTTON_SWAP", &payload, sizeof(payload));
+            ImGui::SetDragDropPayload(kPayloadTypeSwap, &payload, sizeof(payload));
             ImGui::Text("%s", "Move gate");
             ImGui::EndDragDropSource();
           }
@@ -206,8 +227,8 @@ void CircuitEditor::Draw() {
             const bool valid = IsValidSwap(qubit, layer, payload_qubit, payload_layer);
 
             if (valid && payload->IsDelivery()) {
-              Set(qubit, layer, buttons_arr_[payload_qubit][payload_layer]);
-              Set(payload_qubit, payload_layer, gate_button);
+              SetButton(qubit, layer, editor_data.buttons_arr[payload_qubit][payload_layer]);
+              SetButton(payload_qubit, payload_layer, gate_button);
             }
 
             // Mouse/ tooltips
@@ -224,7 +245,7 @@ void CircuitEditor::Draw() {
             const bool valid = IsValidSet(qubit, layer, payload_button->part);
 
             if (valid && payload->IsDelivery()) {
-              Set(qubit, layer, payload_button);
+              SetButton(qubit, layer, payload_button);
             }
 
             if (!valid) {
@@ -242,12 +263,19 @@ void CircuitEditor::Draw() {
         ImGui::PopID(); // layer
       }
 
+      // [COLUMN N+2 - Qubit Info]
+      if (gui_data.show_qubit_info) {
+        ImGui::TableSetColumnIndex(num_table_cols - 1);
+        ImGui::Text("Info:");
+      }
+
       ImGui::PopID(); // qubit
     }
 
     ImGui::EndTable(); // Circuit Diagram
 
     /* Draw border for first (qubit) column */ {
+      // TODO: Draw for qubit info also
       ImGuiContext *ctx = ImGui::GetCurrentContext();
       ImGuiTable *table = ctx->Tables.GetByKey(ImGui::GetID("Circuit Diagram"));
       ImGuiTableColumn *first_col = &table->Columns[0];
@@ -266,223 +294,75 @@ void CircuitEditor::Draw() {
   ImGui::EndChild(); // Outer Child
 }
 
-void CircuitEditor::ClearCircuit() {
-  circuit_->Clear();
+void ClearEditor() {
+  Circuit &circuit = Application::Instance().circuit;
+  circuit.Clear();
 
   for (Circuit::GridSize_T qubit = 0; qubit < Circuit::kMaxQubits; ++qubit) {
     for (Circuit::GridSize_T layer = 0; layer < Circuit::kMaxDepth; ++layer) {
-      buttons_arr_[qubit][layer] = &gate::kEmpty;
+      editor_data.buttons_arr[qubit][layer] = &gate::kEmpty;
     }
   }
 
-  *circuit_dirty_ = true;
+  editor_data.circuit_dirty = true;
 }
 
-void CircuitEditor::UpdateCircuitSize() {
-  int &qubits = data.num_qubits;
-  int &layers = data.num_layers;
+void UpdateCircuitSize() {
+  Circuit &circuit = Application::Instance().circuit;
 
-  qubits = std::clamp<int>(qubits, Circuit::kMinQubits, Circuit::kMaxQubits);
-  layers = std::clamp<int>(layers, Circuit::kMinDepth, Circuit::kMaxDepth);
+  gui_data.num_qubits =
+      std::clamp<int>(gui_data.num_qubits, Circuit::kMinQubits, Circuit::kMaxQubits);
+  gui_data.num_layers =
+      std::clamp<int>(gui_data.num_layers, Circuit::kMinDepth, Circuit::kMaxDepth);
 
-  if (std::cmp_not_equal(qubits, circuit_->GetNumQubits()) ||
-      std::cmp_not_equal(layers, circuit_->GetNumLayers())) {
-    circuit_->SetSize(static_cast<Circuit::GridSize_T>(qubits),
-                      static_cast<Circuit::GridSize_T>(layers));
+  const GridSize qubits = static_cast<GridSize>(gui_data.num_qubits);
+  const GridSize layers = static_cast<GridSize>(gui_data.num_layers);
 
-    *circuit_dirty_ = true;
+  if (qubits != circuit.GetNumQubits() || layers != circuit.GetNumLayers()) {
+    circuit.SetSize(qubits, layers);
+    editor_data.circuit_dirty = true;
   }
 }
 
-const GateButton *CircuitEditor::Get(const Circuit::GridSize_T qubit,
-                                     const Circuit::GridSize_T layer) const {
+/* --------------- CIRCUIT INFO PANEL --------------- */
 
-  if (qubit <= Circuit::kMaxQubits && layer <= Circuit::kMaxDepth) {
-    return buttons_arr_[qubit][layer];
-  }
+void DrawInfo() {
+  ImGui::Checkbox("Skip outputs with 0 probability", &gui_data.skip_zero_probabilities);
 
-  return &gate::kEmpty;
-}
+  const bool skip_zeroes = gui_data.skip_zero_probabilities;
+  const auto &info = Application::Instance().current_circuit_info;
 
-void CircuitEditor::Set(const Circuit::GridSize_T qubit, const Circuit::GridSize_T layer,
-                        const GateButton *button) {
-  if (circuit_ == nullptr) return;
+  if (ImPlot::BeginPlot("Probability Distribution:", {-1, 0},
+                        ImPlotFlags_Equal | ImPlotFlags_NoLegend | ImPlotFlags_NoMouseText)) {
 
-  switch (button->part) {
-    case Circuit::Part::kEmpty:
-      circuit_->AddEmpty(qubit, layer);
-      break;
-    case Circuit::Part::kMatrix2x2:
-      circuit_->AddGate(qubit, layer, button->matrix);
-      break;
-    case Circuit::Part::kControlBit:
-      circuit_->AddControlBit(qubit, layer);
-      break;
-    case Circuit::Part::kAntiControlBit:
-      circuit_->AddAntiControlBit(qubit, layer);
-      break;
-    case Circuit::Part::kMeasure:
-      circuit_->AddMeasurement(qubit, layer);
-      break;
-    case Circuit::Part::kSwap:
-      circuit_->AddSwap(qubit, layer);
-      break;
-    default:
-      std::cerr << "Unimplemented part type!" << std::endl;
-      return;
-  }
+    const std::vector<const char *> *x_axis_labels;
+    const std::vector<double> *probabilities;
 
-  buttons_arr_[qubit][layer] = button;
-  *circuit_dirty_ = true;
-}
-
-void CircuitEditor::ReadFromCircuit() {
-  /* This is really horrible and error-prone, I shouldn't really have to do this.... but alas... */
-  // TODO: Do something different that doesn't involve this...
-  for (Circuit::GridSize_T qubit = 0; qubit < Circuit::kMaxQubits; ++qubit) {
-    for (Circuit::GridSize_T layer = 0; layer < Circuit::kMaxDepth; ++layer) {
-      const Circuit::Part part_type = circuit_->GetPartTypeUnsafe(qubit, layer);
-      const Circuit::Matrix_T *matrix = circuit_->GetMatrixUnsafe(qubit, layer);
-
-      bool set = false;
-      for (const GateButton *button : gate::kKnownGates) {
-        if (part_type == button->part && button->MatrixMatches(matrix)) {
-          buttons_arr_[qubit][layer] = button;
-          set = true;
-          break;
-        }
-      }
-
-      if (!set) {
-        std::cerr << "Unknown part!" << std::endl;
-
-        if (matrix) {
-          matrix->Print(std::cerr) << std::endl;
-        }
-      }
+    if (!skip_zeroes) {
+      x_axis_labels = &info.labels_c;
+      probabilities = &info.densities;
+    } else {
+      x_axis_labels = &info.labels_c_nonzero;
+      probabilities = &info.densities_nonzero;
     }
+
+    const int count = static_cast<int>(x_axis_labels->size());
+
+    std::vector<double> positions(count);
+    std::ranges::iota(positions, 0);
+
+    ImPlot::SetupAxes("Output", "Probability Density", ImPlotAxisFlags_AutoFit, ImPlotAxisFlags_AutoFit);
+    ImPlot::SetupAxisLimits(ImAxis_Y1, 0, 1, ImGuiCond_Always);
+    ImPlot::SetupAxisTicks(ImAxis_X1, positions.data(), count, x_axis_labels->data());
+    ImPlot::PlotBars("", probabilities->data(), count, kInfoGraphBarSize, 0);
+
+    ImPlot::EndPlot();
   }
 }
 
-bool CircuitEditor::ShouldConnectGates(const Circuit::Part a, const Circuit::Part b,
-                                       const Circuit::GridSize_T layer) const {
+/* --------------- CIRCUIT PALETTE --------------- */
 
-  using enum Circuit::Part;
-
-  if (a == kEmpty || b == kEmpty) return false;
-  if (a == kMeasure || b == kMeasure) return false;
-
-  const bool exists_valid_swap = circuit_->ExistsValidSwapInLayer(layer);
-  const bool exists_matrix = circuit_->ExistsInLayer(kMatrix2x2, layer);
-  const bool exists_control = circuit_->ExistsInLayer(kControlBit, layer) ||
-                              circuit_->ExistsInLayer(kAntiControlBit, layer);
-
-  switch (a) {
-    case kMatrix2x2:
-      switch (b) { /* Matrix gate */
-        case kMatrix2x2:
-          return exists_control;
-        case kControlBit:
-        case kAntiControlBit:
-          return true;
-        default:
-          return false;
-      }
-    case kControlBit:
-    case kAntiControlBit:
-      switch (b) { /* Control bit */
-        case kMatrix2x2:
-          return true;
-        case kControlBit:
-        case kAntiControlBit:
-          return exists_valid_swap || exists_matrix;
-        case kSwap:
-          return exists_valid_swap;
-        default:
-          return false;
-      }
-    case kSwap:
-      switch (b) { /* Swap gate */
-        case kMatrix2x2:
-          return false;
-        case kControlBit:
-        case kAntiControlBit:
-          return exists_valid_swap;
-        case kSwap:
-          return true;
-        default:
-          return false;
-      }
-    default:
-      return false;
-  }
-}
-
-bool CircuitEditor::IsValidSwap(const Circuit::GridSize_T qubit_a,
-                                const Circuit::GridSize_T layer_a,
-                                const Circuit::GridSize_T qubit_b,
-                                const Circuit::GridSize_T layer_b) const {
-  if (layer_a == layer_b) {
-    return true; // There aren't any rules depending on layer position
-  }
-
-  std::vector<Circuit::Part> parts_a = circuit_->GetPartsInLayer(layer_a);
-  std::vector<Circuit::Part> parts_b = circuit_->GetPartsInLayer(layer_b);
-
-  parts_a.at(qubit_a) = buttons_arr_[qubit_b][layer_b]->part;
-  parts_b.at(qubit_b) = buttons_arr_[qubit_a][layer_a]->part;
-
-  return Circuit::IsValidLayer(parts_a) && Circuit::IsValidLayer(parts_b);
-}
-
-bool CircuitEditor::IsValidSet(const Circuit::GridSize_T qubit, const Circuit::GridSize_T layer,
-                               const Circuit::Part part) const {
-
-  std::vector<Circuit::Part> parts = circuit_->GetPartsInLayer(layer);
-  parts.at(qubit) = part;
-
-  return Circuit::IsValidLayer(parts);
-}
-
-bool CircuitEditor::IsQubitEmpty(Circuit::GridSize_T qubit) const {
-  if (qubit > Circuit::kMaxQubits) {
-    throw std::out_of_range(
-        std::format("Maximum qubits is %d, got %d!", Circuit::kMaxQubits, qubit));
-  }
-
-  bool out = true;
-
-  for (Circuit::GridSize_T layer = 0; layer < Circuit::kMaxDepth; ++layer) {
-    if (buttons_arr_[qubit][layer]->part != Circuit::Part::kEmpty) {
-      out = false;
-      break;
-    }
-  }
-
-  return out;
-}
-
-bool CircuitEditor::IsLayerEmpty(Circuit::GridSize_T layer) const {
-
-  if (layer > Circuit::kMaxDepth) {
-    throw std::out_of_range(std::format("Maximum depth is %d, got %d!", Circuit::kMaxDepth, layer));
-  }
-
-  bool out = true;
-
-  for (Circuit::GridSize_T qubit = 0; qubit < Circuit::kMaxQubits; ++qubit) {
-    if (buttons_arr_[qubit][layer]->part != Circuit::Part::kEmpty) {
-      out = false;
-      break;
-    }
-  }
-
-  return out;
-}
-
-/* --------------- CIRCUIT PALETTE ---------------*/
-
-void CircuitPalette::Draw() {
+void DrawPalette() {
   const ImGuiStyle &style = ImGui::GetStyle();
   const TextureManager &texture_manager = Application::Instance().GetTextureManager();
 
@@ -521,7 +401,7 @@ void CircuitPalette::Draw() {
 
     // DRAG AND DROP SOURCE
     if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)) {
-      ImGui::SetDragDropPayload("BUTTON_SET", &gate_button, sizeof(*gate_button));
+      ImGui::SetDragDropPayload(kPayloadTypeSet, &gate_button, sizeof(*gate_button));
       ImGui::Text("%s", "Set gate");
       ImGui::EndDragDropSource();
     }
@@ -536,47 +416,163 @@ void CircuitPalette::Draw() {
   }
 }
 
-/* --------------- CIRCUIT INFO PANEL ---------------*/
-void CircuitInfoPanel::Draw() {
-  ImGui::Checkbox("Skip outputs with 0 probability", &data.skip_empty_probs);
+/* --------------- GENERAL --------------- */
 
-  if (*circuit_dirty_ == true) {
-    RecomputeInfo(); // TODO: Could be moved
+void SetExampleCircuit() {
+  gui_data.num_qubits = 3;
+  gui_data.num_layers = 4;
+  UpdateCircuitSize();
+
+  SetButton(1, 0, &gate::kHadamard);
+  SetButton(2, 0, &gate::kPauliX);
+
+  SetButton(0, 1, &gate::kPauliX);
+  SetButton(1, 1, &gate::kControlBit);
+
+  SetButton(0, 2, &gate::kPauliZ);
+
+  SetButton(1, 3, &gate::kControlBit);
+  SetButton(2, 3, &gate::kPauliX);
+}
+
+void SetButton(const GridSize qubit, const GridSize layer, const GateButton *button) {
+  using enum Circuit::Part;
+  Circuit &circuit = Application::Instance().circuit;
+
+  if (std::cmp_greater(qubit, gui_data.num_qubits) || std::cmp_greater(layer, gui_data.num_layers))
+    return;
+
+  switch (button->part) {
+    case kEmpty:
+      circuit.AddEmpty(qubit, layer);
+      break;
+    case kMatrix2x2:
+      circuit.AddGate(qubit, layer, button->matrix);
+      break;
+    case kControlBit:
+      circuit.AddControlBit(qubit, layer);
+      break;
+    case kAntiControlBit:
+      circuit.AddAntiControlBit(qubit, layer);
+      break;
+    case kMeasure:
+      circuit.AddMeasurement(qubit, layer);
+      break;
+    case kSwap:
+      circuit.AddSwap(qubit, layer);
+      break;
+    default:
+      std::cerr << "Unimplemented part type!" << std::endl;
+      return;
   }
 
-  if (ImPlot::BeginPlot("Probability Distribution:", {-1, 0},
-                        ImPlotFlags_Equal | ImPlotFlags_NoLegend | ImPlotFlags_NoMouseText)) {
+  editor_data.buttons_arr[qubit][layer] = button;
+  editor_data.circuit_dirty = true;
+}
 
-    const std::vector<const char *> *x_axis_labels;
-    const std::vector<double> *probabilities;
+bool ShouldConnectGates(const Part a, const Part b, const GridSize layer) {
+  using enum Circuit::Part;
 
-    if (!data.skip_empty_probs) {
-      x_axis_labels = &info_.labels_c;
-      probabilities = &info_.densities;
-    } else {
-      x_axis_labels = &info_.labels_c_nonzero;
-      probabilities = &info_.densities_nonzero;
-    }
+  if (a == kEmpty || b == kEmpty) return false;
+  if (a == kMeasure || b == kMeasure) return false;
 
-    const int count = static_cast<int>(x_axis_labels->size());
+  if (std::cmp_less(gui_data.num_qubits, Circuit::kMinQubits) ||
+      std::cmp_less(gui_data.num_layers, Circuit::kMinDepth)) {
+    return false; // Not initialized
+  }
 
-    std::vector<double> positions(count);
-    std::ranges::iota(positions, 0);
+  int num_swaps = 0;
+  bool exists_matrix = false;
+  bool exists_control = false;
 
-    ImPlot::SetupAxes("Output", "Probability", ImPlotAxisFlags_AutoFit, ImPlotAxisFlags_AutoFit);
-    ImPlot::SetupAxisLimits(ImAxis_Y1, 0, 1, ImGuiCond_Always);
-    ImPlot::SetupAxisTicks(ImAxis_X1, positions.data(), count, x_axis_labels->data());
-    ImPlot::PlotBars("", probabilities->data(), count, kBarSize, 0);
+  for (int qubit = 0; qubit < gui_data.num_qubits; ++qubit) {
+    const GateButton *button = editor_data.buttons_arr[qubit][layer];
 
-    ImPlot::EndPlot();
+    if (button->part == kSwap) num_swaps++;
+    if (button->part == kMatrix2x2) exists_matrix = true;
+    if (button->part == kControlBit || button->part == kAntiControlBit) exists_control = true;
+  }
+
+  const bool exists_valid_swap = num_swaps >= 2;
+
+  switch (a) {
+    case kMatrix2x2:
+      switch (b) /* Matrix */ {
+        case kMatrix2x2:
+          return exists_control;
+        case kControlBit:
+        case kAntiControlBit:
+          return true;
+        default:
+          return false;
+      }
+    case kControlBit:
+    case kAntiControlBit:
+      switch (b) /* Control */ {
+        case kMatrix2x2:
+          return true;
+        case kControlBit:
+        case kAntiControlBit:
+          return exists_valid_swap || exists_matrix;
+        case kSwap:
+          return exists_valid_swap;
+        default:
+          return false;
+      }
+    case kSwap:
+      switch (b) /* Swap */ {
+        case kMatrix2x2:
+          return false;
+        case kControlBit:
+        case kAntiControlBit:
+          return exists_valid_swap;
+        case kSwap:
+          return true;
+        default:
+          return false;
+      }
+    default:
+      return false;
   }
 }
 
-void CircuitInfoPanel::RecomputeInfo() {
-  state_vector_ = StateVector{circuit_->GetNumQubits()};
-  ApplyCircuitQubitWise(*circuit_, state_vector_);
+bool IsValidSet(const GridSize qubit, const GridSize layer, const Part part) {
+  const Circuit &circuit = Application::Instance().circuit;
 
-  info_.RecalculateData(state_vector_);
+  // TODO: Unnecessarily heavy ?
+  std::vector<Circuit::Part> parts =
+      circuit.GetPartsInLayer(layer) | std::ranges::to<decltype(parts)>();
+  parts.at(qubit) = part;
 
-  *circuit_dirty_ = false;
+  return Circuit::IsValidLayer(parts);
 }
+
+bool IsValidSwap(const GridSize qubit_a, const GridSize layer_a, const GridSize qubit_b,
+                 const GridSize layer_b) {
+  const Circuit &circuit = Application::Instance().circuit;
+  const Part a_part = editor_data.buttons_arr[qubit_a][layer_a]->part;
+  const Part b_part = editor_data.buttons_arr[qubit_b][layer_b]->part;
+
+  if (layer_a == layer_b) return true;
+  if (a_part == b_part) return true;
+
+  if (a_part == Part::kEmpty) {
+    return IsValidSet(qubit_a, layer_a, b_part);
+  }
+
+  if (b_part == Part::kEmpty) {
+    return IsValidSet(qubit_b, layer_b, a_part);
+  }
+
+  std::vector<Circuit::Part> parts_a =
+      circuit.GetPartsInLayer(layer_a) | std::ranges::to<decltype(parts_a)>();
+  std::vector<Circuit::Part> parts_b =
+      circuit.GetPartsInLayer(layer_b) | std::ranges::to<decltype(parts_b)>();
+
+  parts_a.at(qubit_a) = b_part;
+  parts_b.at(qubit_b) = a_part;
+
+  return Circuit::IsValidLayer(parts_a) && Circuit::IsValidLayer(parts_b);
+}
+
+} // namespace editor::circuit

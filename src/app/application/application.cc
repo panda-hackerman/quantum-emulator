@@ -9,6 +9,7 @@
 
 #include <iostream>
 
+#include "../editor_windows/custom_windows.h"
 #include "../resources/editorconfig_handler.h"
 #include "../settings_constants.h"
 #include "../theme.h"
@@ -16,6 +17,7 @@
 #include "../util/wgpu_string_view_util.h"
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_wgpu.h"
+#include "simulator/simulator.h"
 
 bool Application::Init() {
 
@@ -201,6 +203,15 @@ void Application::EndFrame() {
 void Application::Tick() {
   glfwPollEvents();
   wgpuInstanceProcessEvents(instance_);
+
+  // Simulate circuit if dirty
+  if (bool &dirty = editor::circuit::editor_data.circuit_dirty) {
+    current_state_vector = StateVector{circuit.GetNumQubits()}; // Reset state vector
+    ApplyCircuitQubitWise(circuit, current_state_vector);   // Run circuit
+    current_circuit_info.RecalculateData(current_state_vector); // Get stats
+
+    dirty = false;
+  }
 
   BeginFrame();
   DrawFrame();

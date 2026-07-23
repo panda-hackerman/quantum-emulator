@@ -19,6 +19,7 @@ add_executable(App main.cc
         editor_windows/circuit_info_processor.h
         editor_windows/circuit_info_processor.cc
         resources/editorconfig_circuit.h
+        editor_windows/circuit_editor_button.h
 )
 
 target_link_libraries(App PRIVATE Engine)

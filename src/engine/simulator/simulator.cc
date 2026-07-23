@@ -10,8 +10,8 @@
 #include "math/constants.h"
 
 void ApplyMatrixQubitWise(StateVector &state_vector, const Circuit::Matrix_T *matrix,
-                       const Circuit::GridSize_T qubit_index,
-                       const std::span<Circuit::Part> parts) {
+                          const Circuit::GridSize_T qubit_index,
+                          const std::span<const Circuit::Part> parts) {
 
   if (state_vector.NumQubits() != parts.size()) {
     throw std::invalid_argument("Number of qubits must match number of parts!");
@@ -69,7 +69,7 @@ void ApplyMatrixQubitWise(StateVector &state_vector, const Circuit::Matrix_T *ma
 }
 
 void ApplySwap(StateVector &state_vector, const Circuit::GridSize_T qubit_a,
-               const Circuit::GridSize_T qubit_b, const std::span<Circuit::Part> parts) {
+               const Circuit::GridSize_T qubit_b, const std::span<const Circuit::Part> parts) {
 
   if (state_vector.NumQubits() != parts.size()) {
     throw std::invalid_argument("Number of qubits must match number of parts!");

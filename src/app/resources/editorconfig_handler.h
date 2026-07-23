@@ -30,13 +30,14 @@ inline bool InitFilePath() {
   namespace fs = std::filesystem;
 
   try {
-    const fs::path relative_path(kPath);
-    fs::path absolute_path = absolute(relative_path);
-    absolute_path.remove_filename();
+    if constexpr (kPath != nullptr) {
+      const fs::path relative_path(kPath);
+      fs::path absolute_path = absolute(relative_path);
+      absolute_path.remove_filename();
 
-    if (!fs::exists(absolute_path)) {
-      fs::create_directories(absolute_path);
-      ImGui::SaveIniSettingsToDisk(kPath);
+      if (!fs::exists(absolute_path)) {
+        fs::create_directories(absolute_path);
+      }
     }
 
     return true;
@@ -44,9 +45,9 @@ inline bool InitFilePath() {
     std::cerr << "Couldn't create editor config directory: " << ex.what();
     return false;
   }
-#else
+#else // #ifndef __EMSCRIPTEN__
   return true;
-#endif
+#endif// #ifndef __EMSCRIPTEN__ #else
 }
 
 inline void Init() {

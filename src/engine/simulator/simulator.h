@@ -29,7 +29,7 @@
  * number of qubits.
  */
 void ApplyMatrixQubitWise(StateVector &state_vector, const Circuit::Matrix_T *matrix,
-                          Circuit::GridSize_T qubit_index, std::span<Circuit::Part> parts);
+                          Circuit::GridSize_T qubit_index, std::span<const Circuit::Part> parts);
 
 /**
  * Simulate the effect of a swap gate on a state vector.
@@ -40,7 +40,7 @@ void ApplyMatrixQubitWise(StateVector &state_vector, const Circuit::Matrix_T *ma
  * @param parts The list of parts (indicates where the control bits are).
  */
 void ApplySwap(StateVector &state_vector, Circuit::GridSize_T qubit_a, Circuit::GridSize_T qubit_b,
-               std::span<Circuit::Part> parts);
+               std::span<const Circuit::Part> parts);
 
 /**
  * Simulate an entire circuit using the Qubit-wise Multiply Method.

@@ -5,141 +5,88 @@
 #ifndef CUSTOM_WINDOWS_H
 #define CUSTOM_WINDOWS_H
 
-#include "../resources/texture.h"
-#include "circuit_info_processor.h"
-#include "imgui.h"
-#include "math/constants.h"
+#include "circuit_editor_button.h"
 #include "quantum_circuit/circuit.h"
-#include "simulator/state_vector.h"
 
-struct GateButton {
-  const char *name = nullptr;
-  Circuit::Part part = Circuit::Part::kEmpty;
-  const SpriteID sprite_id = SpriteID::kUndefined;
-  const Circuit::Matrix_T *matrix = nullptr;
+struct EditorWindow; // Forward declare
 
-  constexpr bool MatrixMatches(const Circuit::Matrix_T *other) const {
-    if (this->matrix == other) return true; // Pointers are equal
+namespace editor::circuit {
 
-    if (matrix != nullptr && other != nullptr) {
-      if (*matrix == *other) return true;   // Values are equal
+using Part = Circuit::Part;
+using GridSize = Circuit::GridSize_T;
+
+/// Data for the circuit editor.
+inline constinit struct EditorData {
+  const GateButton *buttons_arr[Circuit::kMaxQubits][Circuit::kMaxDepth]{};
+  bool circuit_dirty = true;
+
+  constexpr EditorData() noexcept {
+    for (GridSize qubit = 0; qubit < Circuit::kMaxQubits; ++qubit) {
+      for (GridSize layer = 0; layer < Circuit::kMaxQubits; ++layer) {
+        buttons_arr[qubit][layer] = &gate::kEmpty; // Initialize all to empty
+      }
     }
-
-    return false;
   }
+} editor_data{};
+
+/// Data that can be modified by ImGui (e.g. by an input)
+inline constinit struct GuiData {
+  // For Circuit Editor Window
+  int num_qubits = -1;
+  int num_layers = -1;
+  bool show_qubit_info = true;
+
+  // For Circuit Info Window
+  bool skip_zero_probabilities = true;
+} gui_data{};
+
+/* -- Drag and drop info -- */
+inline constexpr auto kPayloadTypeSwap = "BUTTON_SWAP";
+inline constexpr auto kPayloadTypeSet = "BUTTON_SET";
+
+struct GateSwapPayload {
+  GridSize from_qubit;
+  GridSize from_layer;
 };
 
-/// Preset gate types
-namespace gate { /// Default gates
-
-inline constexpr GateButton kEmpty = {"", Circuit::Part::kEmpty};
-inline constexpr GateButton kControlBit = {"Control", Circuit::Part::kControlBit,
-                                           SpriteID::kCircuitControl};
-inline constexpr GateButton kAntiControlBit = {"Anti-Control", Circuit::Part::kAntiControlBit,
-                                               SpriteID::kCircuitAntiControl};
-
-inline constexpr GateButton kMeasurementGate = {"Measurement", Circuit::Part::kMeasure,
-                                                SpriteID::kCircuitMeasure};
-inline constexpr GateButton kSwapGate = {"Swap", Circuit::Part::kSwap, SpriteID::kCircuitSwap};
-inline constexpr GateButton kIdentity = {"Identity", Circuit::Part::kMatrix2x2,
-                                         SpriteID::kCircuitIdentity, &matrix::kIdentity};
-inline constexpr GateButton kPauliX = {"Pauli X", Circuit::Part::kMatrix2x2,
-                                       SpriteID::kCircuitPauliX, &matrix::kPauliX};
-inline constexpr GateButton kPauliY = {"Pauli Y", Circuit::Part::kMatrix2x2,
-                                       SpriteID::kCircuitPauliY, &matrix::kPauliY};
-inline constexpr GateButton kPauliZ = {"Pauli Z", Circuit::Part::kMatrix2x2,
-                                       SpriteID::kCircuitPauliZ, &matrix::kPauliZ};
-inline constexpr GateButton kHadamard = {"Hadamard", Circuit::Part::kMatrix2x2,
-                                         SpriteID::kCircuitHadamard, &matrix::kHadamard};
-inline constexpr GateButton kTGate = {"T Gate", Circuit::Part::kMatrix2x2, SpriteID::kCircuitTGate,
-                                      &matrix::kPi8ths};
-inline constexpr GateButton kPhaseGate = {"Phase Gate", Circuit::Part::kMatrix2x2,
-                                          SpriteID::kCircuitPhase, &matrix::kPhase};
-
-inline constexpr auto kKnownGates = std::array{
-    &kEmpty, &kIdentity,  &kHadamard,   &kPauliX,         &kPauliY,   &kPauliZ,
-    &kTGate, &kPhaseGate, &kControlBit, &kAntiControlBit, &kSwapGate, &kMeasurementGate,
-};
-} // namespace gate
-
-class CircuitEditor {
-private:
-  Circuit *circuit_;
-  bool *circuit_dirty_;
-  const GateButton *buttons_arr_[Circuit::kMaxQubits][Circuit::kMaxDepth];
-
-  /* Drag and drop payload types */
-  static constexpr auto kPayloadTypeSwap = "BUTTON_SWAP";
-  static constexpr auto kPayloadTypeSet = "BUTTON_SET";
-
-public:
-  struct { // Data that will be touched directly by ImGui (e.g. by an input)
-    int num_qubits = -1;
-    int num_layers = -1;
-  } data;
-
-  struct GateSwapPayload {
-    Circuit::GridSize_T from_qubit;
-    Circuit::GridSize_T from_layer;
-  };
-
-  explicit CircuitEditor(Circuit *circuit, bool *circuit_dirty) :
-      circuit_{circuit}, circuit_dirty_{circuit_dirty}, buttons_arr_{} {
-    data.num_qubits = circuit->GetNumQubits();
-    data.num_layers = circuit->GetNumLayers();
-
-    ReadFromCircuit();
-  }
-
-  void Draw();
-  void UpdateCircuitSize();
-  void ClearCircuit();
-
-  void Set(Circuit::GridSize_T qubit, Circuit::GridSize_T layer, const GateButton *button);
-
-  [[nodiscard]] const GateButton *Get(Circuit::GridSize_T qubit, Circuit::GridSize_T layer) const;
-
-  void ReadFromCircuit();
-
-  /// True if we should draw a vertical line between these two gates
-  [[nodiscard]] bool ShouldConnectGates(Circuit::Part a, Circuit::Part b,
-                                        Circuit::GridSize_T layer) const;
-
-  [[nodiscard]] bool IsValidSwap(Circuit::GridSize_T qubit_a, Circuit::GridSize_T layer_a,
-                                 Circuit::GridSize_T qubit_b, Circuit::GridSize_T layer_b) const;
-
-  [[nodiscard]] bool IsValidSet(Circuit::GridSize_T qubit, Circuit::GridSize_T layer,
-                                Circuit::Part part) const;
-
-  [[nodiscard]] bool IsQubitEmpty(Circuit::GridSize_T qubit) const;
-  [[nodiscard]] bool IsLayerEmpty(Circuit::GridSize_T layer) const;
+struct GateSetPayload {
+  const GateButton *button;
 };
 
-class CircuitPalette {
-public:
-  void Draw();
-};
+/* -- Other Constants */
+inline constexpr double kInfoGraphBarSize = 0.8;
 
-class CircuitInfoPanel {
-private:
-  static constexpr double kBarSize = 0.8;
+/* -- Editor Windows -- */
+extern EditorWindow main_window;
+extern EditorWindow info_window;
+extern EditorWindow palette_window;
 
-  Circuit *circuit_;
-  bool *circuit_dirty_;
+/* -- Window Functions -- */
+void DrawEditor();
+void ClearEditor();
+void UpdateCircuitSize();
 
-  StateVector state_vector_;
-  ComputedCircuitInfo info_;
+void DrawInfo();
 
-public:
-  struct {
-    bool skip_empty_probs = false; // Disabled by default
-  } data;
+void DrawPalette();
 
-  CircuitInfoPanel(Circuit *circuit, bool *circuit_dirty) :
-      circuit_{circuit}, circuit_dirty_{circuit_dirty} {}
+void SetButton(GridSize qubit, GridSize layer, const GateButton *button);
 
-  void Draw();
-  void RecomputeInfo();
-};
+/**
+ * Sets the current circuit to an example circuit, which looks like:
+ * @code
+ * q0 |0> ---X-Z---
+ * q1 |0> -H-*---*-
+ * q2 |0> -X-----X-
+ * @endcode
+ */
+void SetExampleCircuit();
+
+[[nodiscard]] bool ShouldConnectGates(Part a, Part b, GridSize layer);
+[[nodiscard]] bool IsValidSet(GridSize qubit, GridSize layer, Part part);
+[[nodiscard]] bool IsValidSwap(GridSize qubit_a, GridSize layer_a, GridSize qubit_b,
+                               GridSize layer_b);
+
+} // namespace editor::circuit
 
 #endif // CUSTOM_WINDOWS_H

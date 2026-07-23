@@ -20,11 +20,6 @@ class EditorWindowManager {
 private:
   std::vector<EditorWindow> windows_;
 
-  Circuit circuit_ = Circuit::BuildExampleCircuit();
-  CircuitEditor circuit_window_{&circuit_, &circuit_info_dirty_};
-  CircuitInfoPanel circuit_info_{&circuit_, &circuit_info_dirty_};
-  CircuitPalette circuit_palette_{};
-
   bool is_initialized_ = false;
   bool circuit_info_dirty_ = true;
 
@@ -35,10 +30,6 @@ public:
   void Terminate();
 
   [[nodiscard]] bool IsInitialized() const { return  is_initialized_; }
-
-  [[nodiscard]] CircuitEditor &GetCircuitWindow() { return circuit_window_; }
-  [[nodiscard]] CircuitInfoPanel &GetCircuitInfo() { return circuit_info_; }
-  [[nodiscard]] CircuitPalette &GetCircuitPalette() { return circuit_palette_; }
 
   ~EditorWindowManager() { Terminate(); }
 };

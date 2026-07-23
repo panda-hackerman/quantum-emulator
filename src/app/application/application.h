@@ -10,6 +10,8 @@
 #include "../editor_windows/editor_window_manager.h"
 #include "../resources/texture.h"
 #include "device_window.h"
+#include "simulator/state_vector.h"
+#include "../editor_windows/circuit_info_processor.h"
 
 /// The application (singleton)
 class Application {
@@ -34,6 +36,10 @@ private:
   Application() = default;
 
 public:
+  Circuit circuit = {Circuit::kMinQubits, Circuit::kMinDepth};
+  StateVector current_state_vector{};
+  ComputedCircuitInfo current_circuit_info{};
+
   bool Init(); ///< Called on initialization
   void Terminate(); ///< Terminates all processes (called automatically in destructor)
   void Tick(); ///< Called every update

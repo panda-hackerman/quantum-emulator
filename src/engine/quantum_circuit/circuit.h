@@ -37,7 +37,7 @@ public:
 
   static constexpr GridSize_T kMinQubits = 1; ///< Minimum allowed qubits in a circuit
   static constexpr GridSize_T kMaxQubits = 8; ///< Maximum allowed qubits in a circuit
-  static constexpr GridSize_T kMinDepth = 1;  ///< Minimum allowed layers (aka circuit depth)
+  static constexpr GridSize_T kMinDepth = 1; ///< Minimum allowed layers (aka circuit depth)
   static constexpr GridSize_T kMaxDepth = 31; ///< Maximum allowed layers (aka circuit depth)
 
   static_assert(std::cmp_less_equal(std::numeric_limits<GridSize_T>::lowest(), kMinQubits));
@@ -117,7 +117,8 @@ public:
   /// Get the gate at the given index without bounds checking
   [[nodiscard]] const Matrix_T *GetMatrixUnsafe(GridSize_T qubit, GridSize_T layer) const;
 
-  [[nodiscard]] std::vector<Part> GetPartsInLayer(GridSize_T layer) const;
+  [[nodiscard]] std::span<Part> GetPartsInLayer(GridSize_T layer);
+  [[nodiscard]] std::span<const Part> GetPartsInLayer(GridSize_T layer) const;
 
   [[nodiscard]] std::vector<const Matrix_T *> GetMatricesInLayer(GridSize_T layer) const;
 
@@ -141,7 +142,7 @@ public:
    * @param layer The parts in the layer to check
    * @return True if this is a valid arrangement.
    */
-  [[nodiscard]] static bool IsValidLayer(const std::vector<Part>& layer);
+  [[nodiscard]] static bool IsValidLayer(std::span<Part> layer);
 
   /**
    * Builds a simple example circuit, which looks like:
