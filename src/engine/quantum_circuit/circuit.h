@@ -37,8 +37,8 @@ public:
 
   static constexpr GridSize_T kMinQubits = 1; ///< Minimum allowed qubits in a circuit
   static constexpr GridSize_T kMaxQubits = 8; ///< Maximum allowed qubits in a circuit
-  static constexpr GridSize_T kMinDepth = 1; ///< Minimum allowed layers (aka circuit depth)
-  static constexpr GridSize_T kMaxDepth = 16; ///< Maximum allowed layers (aka circuit depth)
+  static constexpr GridSize_T kMinDepth = 1;  ///< Minimum allowed layers (aka circuit depth)
+  static constexpr GridSize_T kMaxDepth = 31; ///< Maximum allowed layers (aka circuit depth)
 
   static_assert(std::cmp_less_equal(std::numeric_limits<GridSize_T>::lowest(), kMinQubits));
   static_assert(std::cmp_less_equal(std::numeric_limits<GridSize_T>::lowest(), kMinDepth));
