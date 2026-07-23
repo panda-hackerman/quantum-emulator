@@ -21,7 +21,6 @@ private:
   std::vector<EditorWindow> windows_;
 
   bool is_initialized_ = false;
-  bool circuit_info_dirty_ = true;
 
 public:
   void Init();
