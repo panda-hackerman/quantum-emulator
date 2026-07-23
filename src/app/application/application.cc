@@ -9,7 +9,6 @@
 
 #include <iostream>
 
-#include "../resources/editorconfig_circuit.h"
 #include "../resources/editorconfig_handler.h"
 #include "../settings_constants.h"
 #include "../theme.h"
@@ -17,7 +16,6 @@
 #include "../util/wgpu_string_view_util.h"
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_wgpu.h"
-#include "imgui_internal.h"
 
 bool Application::Init() {
 
@@ -145,7 +143,7 @@ void Application::EndFrame() {
   if (!target_view) return;
 
   // GET ENCODER
-  const WGPUCommandEncoderDescriptor encoder_desc = {
+  constexpr WGPUCommandEncoderDescriptor encoder_desc = {
       .nextInChain = nullptr,
       .label = "The Command Encoder"_w,
   };
