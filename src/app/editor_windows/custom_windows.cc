@@ -257,7 +257,8 @@ void CircuitEditor::Draw() {
       const auto min_y = table->InnerRect.Min.y;
       const auto max_y = table->InnerRect.Max.y;
       const auto border_color = table->BorderColorLight;
-      table->InnerWindow->DrawList->AddLineV(max_x, (min_y + header_height), max_y, border_color, 1);
+      table->InnerWindow->DrawList->AddLineV(max_x, (min_y + header_height), max_y, border_color,
+                                             1);
     }
   }
 
@@ -373,10 +374,20 @@ bool CircuitEditor::ShouldConnectGates(const Circuit::Part a, const Circuit::Par
 
   const bool exists_valid_swap = circuit_->ExistsValidSwapInLayer(layer);
   const bool exists_matrix = circuit_->ExistsInLayer(kMatrix2x2, layer);
+  const bool exists_control = circuit_->ExistsInLayer(kControlBit, layer) ||
+                              circuit_->ExistsInLayer(kAntiControlBit, layer);
 
   switch (a) {
     case kMatrix2x2:
-      return Circuit::IsControlBit(b);
+      switch (b) { /* Matrix gate */
+        case kMatrix2x2:
+          return exists_control;
+        case kControlBit:
+        case kAntiControlBit:
+          return true;
+        default:
+          return false;
+      }
     case kControlBit:
     case kAntiControlBit:
       switch (b) { /* Control bit */
@@ -435,7 +446,8 @@ bool CircuitEditor::IsValidSet(const Circuit::GridSize_T qubit, const Circuit::G
 
 bool CircuitEditor::IsQubitEmpty(Circuit::GridSize_T qubit) const {
   if (qubit > Circuit::kMaxQubits) {
-    throw std::out_of_range(std::format("Maximum qubits is %d, got %d!", Circuit::kMaxQubits, qubit));
+    throw std::out_of_range(
+        std::format("Maximum qubits is %d, got %d!", Circuit::kMaxQubits, qubit));
   }
 
   bool out = true;
