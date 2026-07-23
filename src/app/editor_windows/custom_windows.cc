@@ -45,18 +45,22 @@ EditorWindow main_window = {
     .on_draw = [] { DrawEditor(); },
     .flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_HorizontalScrollbar,
     .can_close = false,
+    .hide_tab_bar = true,
+    .no_tab_bar = true,
 };
 
 EditorWindow info_window = {
     .name = "Circuit Info",
     .on_draw = [] { DrawInfo(); },
     .can_close = false,
+    .hide_tab_bar = true,
 };
 
 EditorWindow palette_window = {
     .name = "Circuits",
     .on_draw = [] { DrawPalette(); },
     .can_close = false,
+    .hide_tab_bar = true,
 };
 
 /* --------------- CIRCUIT EDITOR --------------- */
@@ -120,7 +124,7 @@ void DrawEditor() {
     // Setup Columns
     ImGui::TableSetupColumn("Qubit Num.", col_flags | ImGuiTableColumnFlags_NoHeaderLabel);
 
-    for (int i = 0; std::cmp_less(i , num_layers); ++i) {
+    for (int i = 0; std::cmp_less(i, num_layers); ++i) {
       ImGui::TableSetupColumn(std::format("t{}", i).data(), col_flags);
     }
 
@@ -351,7 +355,8 @@ void DrawInfo() {
     std::vector<double> positions(count);
     std::ranges::iota(positions, 0);
 
-    ImPlot::SetupAxes("Output", "Probability Density", ImPlotAxisFlags_AutoFit, ImPlotAxisFlags_AutoFit);
+    ImPlot::SetupAxes("Output", "Probability Density", ImPlotAxisFlags_AutoFit,
+                      ImPlotAxisFlags_AutoFit);
     ImPlot::SetupAxisLimits(ImAxis_Y1, 0, 1, ImGuiCond_Always);
     ImPlot::SetupAxisTicks(ImAxis_X1, positions.data(), count, x_axis_labels->data());
     ImPlot::PlotBars("", probabilities->data(), count, kInfoGraphBarSize, 0);

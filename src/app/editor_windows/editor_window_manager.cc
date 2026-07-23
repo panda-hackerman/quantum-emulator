@@ -46,6 +46,13 @@ void EditorWindowManager::Terminate() {
 
 void EditorWindowManager::DrawWindows() {
 
+  // Stuff to hide or disable tab bar on docking windows
+  // ImGuiWindowClass hide_tab_bar;
+  // hide_tab_bar.DockNodeFlagsOverrideSet = ImGuiDockNodeFlags_HiddenTabBar;
+  //
+  // ImGuiWindowClass no_tab_bar;
+  // no_tab_bar.DockNodeFlagsOverrideSet = ImGuiDockNodeFlags_NoTabBar;
+
   /* SETUP DOCKING*/ {
     const ImGuiID dock_space_id = ImGui::GetID("Docking Space");
     const ImGuiViewport *viewport = ImGui::GetMainViewport();
@@ -61,8 +68,10 @@ void EditorWindowManager::DrawWindows() {
       ImGuiID dock_id_left_top = 0;
       ImGuiID dock_id_left_bottom = 0;
 
-      ImGui::DockBuilderSplitNode(dock_space_id, ImGuiDir_Left, 0.31f, &dock_id_left, &dock_id_main_right);
-      ImGui::DockBuilderSplitNode(dock_id_left, ImGuiDir_Up, 0.45f, &dock_id_left_top, &dock_id_left_bottom);
+      ImGui::DockBuilderSplitNode(dock_space_id, ImGuiDir_Left, 0.31f, &dock_id_left,
+                                  &dock_id_main_right);
+      ImGui::DockBuilderSplitNode(dock_id_left, ImGuiDir_Up, 0.45f, &dock_id_left_top,
+                                  &dock_id_left_bottom);
 
       ImGui::DockBuilderDockWindow(editor::circuit::main_window.name, dock_id_main_right);
       ImGui::DockBuilderDockWindow(editor::circuit::palette_window.name, dock_id_left_top);
@@ -71,11 +80,22 @@ void EditorWindowManager::DrawWindows() {
       ImGui::DockBuilderFinish(dock_space_id);
     }
 
-    ImGui::DockSpaceOverViewport(dock_space_id, viewport, ImGuiDockNodeFlags_PassthruCentralNode);
+    ImGui::DockSpaceOverViewport(dock_space_id, viewport, ImGuiDockNodeFlags_PassthruCentralNode | ImGuiDockNodeFlags_NoDockingOverCentralNode);
   }
 
   for (EditorWindow &window : windows_) {
     if (!window.open) continue;
+
+    ImGuiWindowClass window_class;
+    // window_class.DockNodeFlagsOverrideSet = ImGuiDockNodeFlags_NoDockingOverCentralNode;
+
+    if (window.no_tab_bar) {
+      window_class.DockNodeFlagsOverrideSet |= ImGuiDockNodeFlags_NoTabBar;
+    } else if (window.hide_tab_bar) {
+      window_class.DockNodeFlagsOverrideSet |= ImGuiDockNodeFlags_AutoHideTabBar;
+    }
+
+    ImGui::SetNextWindowClass(&window_class);
 
     bool *is_open = window.can_close ? &window.open : nullptr;
     ImGui::Begin(window.name, is_open, window.flags);

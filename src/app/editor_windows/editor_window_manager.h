@@ -6,6 +6,7 @@
 #define WINDOW_MANAGER_H
 
 #include <webgpu/webgpu.hpp>
+
 #include "custom_windows.h"
 
 struct EditorWindow {
@@ -13,6 +14,8 @@ struct EditorWindow {
   std::function<void()> on_draw;
   ImGuiWindowFlags flags = ImGuiWindowFlags_None;
   bool can_close = true;
+  bool hide_tab_bar = false;  ///< Hide the ImGui tab bar?
+  bool no_tab_bar = false;    ///< Disable ImGui tab bar completely? Implies hide_tab_bar,
   bool open = true;
 };
 
@@ -28,7 +31,7 @@ public:
   void DrawWindows();
   void Terminate();
 
-  [[nodiscard]] bool IsInitialized() const { return  is_initialized_; }
+  [[nodiscard]] bool IsInitialized() const { return is_initialized_; }
 
   ~EditorWindowManager() { Terminate(); }
 };
