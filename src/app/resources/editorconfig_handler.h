@@ -18,9 +18,11 @@
 namespace editorconfig {
 
 #ifndef __EMSCRIPTEN__
-static constexpr const char *kPath = "data/editorconfig.ini";
+inline constexpr const char *kPath = "data/editorconfig.ini"; ///< Relative ath to editorconfig file
+inline constexpr bool kCircuitPersistsAfterReload = true; ///< True if circuit settings are saved
 #else  // __EMSCRIPTEN__
-static constexpr const char *kPath = nullptr; // No ini file on web...
+inline constexpr const char *kPath = nullptr; // No ini file on web...
+inline constexpr bool kCircuitPersistsAfterReload = false;
 #endif // __EMSCRIPTEN__
 
 inline bool InitFilePath() {
@@ -50,12 +52,14 @@ inline bool InitFilePath() {
 inline void Init() {
 #ifndef __EMSCRIPTEN__
   // Add custom settings
-  const ImGuiSettingsHandler circuit_handler = circuit::BuildHandler();
-  ImGui::AddSettingsHandler(&circuit_handler);
+  if constexpr (kCircuitPersistsAfterReload) {
+    const ImGuiSettingsHandler circuit_handler = circuit::BuildHandler();
+    ImGui::AddSettingsHandler(&circuit_handler);
+  }
+#endif
 
   // Create folders for file path
   InitFilePath();
-#endif
 }
 
 inline void SaveToDiskManual() {

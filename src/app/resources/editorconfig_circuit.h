@@ -25,7 +25,10 @@ inline constexpr const char *kTypeName = "CircuitEditor";
 
 static void *ReadOpen(ImGuiContext *, ImGuiSettingsHandler *, const char *) {
   // Assuming there's only ever one circuit
-  return &Application::Instance().GetWindowManager().GetCircuitWindow();
+  CircuitEditor *editor = &Application::Instance().GetWindowManager().GetCircuitWindow();
+  editor->ClearCircuit(); // Clear previous data if any
+
+  return editor;
 }
 
 static void ReadLine(ImGuiContext *, ImGuiSettingsHandler *, void *entry, const char *line) {
@@ -48,14 +51,19 @@ static void ReadLine(ImGuiContext *, ImGuiSettingsHandler *, void *entry, const 
     editor.data.num_layers = num_layers;
     editor.UpdateCircuitSize();
   } else if (SCAN_FUNC(line, "(q%d,t%d)=%50c", &qubit, &layer, button_name, 50)) {
-    std::string str = button_name;
+    const Circuit::GridSize_T qubit_idx = static_cast<Circuit::GridSize_T>(qubit);
+    const Circuit::GridSize_T layer_idx = static_cast<Circuit::GridSize_T>(layer);
+    std::string name_str = button_name;
 
+    // Find first gate that matches string
     const auto button_itr = std::ranges::find_if(
-        gate::kKnownGates, [&str](const GateButton *other) { return str == other->name; });
+        gate::kKnownGates,
+        [&name_str](const GateButton *other) { return name_str == other->name; });
 
     if (button_itr != gate::kKnownGates.end()) {
-      editor.Set(static_cast<Circuit::GridSize_T>(qubit), static_cast<Circuit::GridSize_T>(layer),
-                 *button_itr);
+      editor.Set(qubit_idx, layer_idx, *button_itr);
+    } else {
+      std::cerr << "While parsing: Unknown gate: \"" << name_str << "\"!";
     }
   }
 }
@@ -83,12 +91,18 @@ static void WriteAll(ImGuiContext *, ImGuiSettingsHandler *handler, ImGuiTextBuf
   }
 }
 
+static void ClearAll(ImGuiContext *, ImGuiSettingsHandler *) {
+  CircuitEditor &editor = Application::Instance().GetWindowManager().GetCircuitWindow();
+  editor.ClearCircuit();
+}
+
 inline ImGuiSettingsHandler BuildHandler() {
 
   ImGuiSettingsHandler handler;
 
   handler.TypeName = kTypeName;
   handler.TypeHash = ImHashStr(kTypeName);
+  handler.ClearAllFn = ClearAll;
   handler.ReadOpenFn = ReadOpen;
   handler.ReadLineFn = ReadLine;
   handler.WriteAllFn = WriteAll;

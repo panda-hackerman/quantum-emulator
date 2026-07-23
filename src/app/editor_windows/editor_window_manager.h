@@ -20,7 +20,7 @@ class EditorWindowManager {
 private:
   std::vector<EditorWindow> windows_;
 
-  Circuit circuit_ = Circuit{3, 4};
+  Circuit circuit_ = Circuit::BuildExampleCircuit();
   CircuitEditor circuit_window_{&circuit_, &circuit_info_dirty_};
   CircuitInfoPanel circuit_info_{&circuit_, &circuit_info_dirty_};
   CircuitPalette circuit_palette_{};
