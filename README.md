@@ -87,8 +87,8 @@ This project can also be run on the web! It's a bit finicky, so be warned.
 - 10.14 Mojave or above (MacOS Only)
 
 #### Steps:
-In the root project folder, run `web-build.bat` (if you're on Windows), 
-or run the following commands in your terminal:
+In the root project folder, run `web-build.sh` (or `.bat` if you're on Windows);
+or, run the following commands in your terminal:
 ```bash
 # Generate the cmake files. We're building from source, 
 # since I couldn't get the pre-compiled option to work.
@@ -107,7 +107,7 @@ python -m http.server -d build\web\dist\Emscripten
 This project uses GoogleTest (gtest) for running C++ tests.
 
 ### Tests in an IDE
-Running the tests in an IDE is straightforwward, most have build-in support. 
+Running the tests in an IDE is straightforward, most have build-in support. 
 For example, in CLion, simply select `EngineTest` from the configurations dropdown in the top right.
 
 > [!TIP]
