@@ -30,10 +30,6 @@ void EditorWindowManager::Init() {
   io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
   io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
-#ifdef __EMSCRIPTEN__
-  io.MouseDrawCursor = true; // Show mouse cursor on web platform
-#endif
-
   SetupWindows();
 
   is_initialized_ = true;
