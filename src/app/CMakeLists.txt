@@ -10,14 +10,14 @@ add_executable(App main.cc
         editor_windows/editor_window_manager.h
         application/device_window.h
         application/device_window.cc
-        editor_windows/custom_windows.h
-        editor_windows/custom_windows.cc
+        editor_windows/editor_windows.h
+        editor_windows/editor_windows.cc
         resources/texture.cc
         resources/texture.h
         resources/editorconfig_handler.h
         theme.h
-        editor_windows/circuit_info_processor.h
-        editor_windows/circuit_info_processor.cc
+        circuit_info.h
+        circuit_info.cc
         resources/editorconfig_circuit.h
         editor_windows/circuit_editor_button.h
 )

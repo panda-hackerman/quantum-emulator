@@ -2,14 +2,13 @@
 // Created by Eli Michaud on 6/25/2026.
 //
 
-#include "custom_windows.h"
-
 #include <numeric>
 #include <utility>
 
 #include "../application/application.h"
 #include "../theme.h"
 #include "editor_window_manager.h"
+#include "editor_windows.h"
 #include "imgui_internal.h"
 #include "implot.h"
 

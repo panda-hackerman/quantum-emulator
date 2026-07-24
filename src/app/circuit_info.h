@@ -2,8 +2,8 @@
 // Created by Eli Michaud on 7/11/2026.
 //
 
-#ifndef CIRCUIT_INFO_PROCESSOR_H
-#define CIRCUIT_INFO_PROCESSOR_H
+#ifndef CIRCUIT_INFO_H
+#define CIRCUIT_INFO_H
 #include <bitset>
 
 #include "simulator/state_vector.h"
@@ -24,4 +24,4 @@ struct ComputedCircuitInfo {
   void RecalculateData(const StateVector &state_vector);
 };
 
-#endif // CIRCUIT_INFO_PROCESSOR_H
+#endif // CIRCUIT_INFO_H

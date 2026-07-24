@@ -2,8 +2,8 @@
 // Created by Eli Michaud on 6/25/2026.
 //
 
-#ifndef CUSTOM_WINDOWS_H
-#define CUSTOM_WINDOWS_H
+#ifndef EDITOR_WINDOWS_H
+#define EDITOR_WINDOWS_H
 
 #include "circuit_editor_button.h"
 #include "quantum_circuit/circuit.h"
@@ -89,4 +89,4 @@ void SetExampleCircuit();
 
 } // namespace editor::circuit
 
-#endif // CUSTOM_WINDOWS_H
+#endif // EDITOR_WINDOWS_H

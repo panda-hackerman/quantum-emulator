@@ -9,7 +9,7 @@
 #include "../application/application.h"
 #include "../resources/editorconfig_handler.h"
 #include "../theme.h"
-#include "custom_windows.h"
+#include "editor_windows.h"
 #include "imgui_internal.h"
 #include "implot.h"
 

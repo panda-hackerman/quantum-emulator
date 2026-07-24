@@ -9,7 +9,7 @@
 
 #include <iostream>
 
-#include "../editor_windows/custom_windows.h"
+#include "../editor_windows/editor_windows.h"
 #include "../resources/editorconfig_handler.h"
 #include "../settings_constants.h"
 #include "../theme.h"

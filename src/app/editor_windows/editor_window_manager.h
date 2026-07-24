@@ -7,7 +7,7 @@
 
 #include <webgpu/webgpu.hpp>
 
-#include "custom_windows.h"
+#include "editor_windows.h"
 
 struct EditorWindow {
   const char *name;

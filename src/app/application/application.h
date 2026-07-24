@@ -7,11 +7,11 @@
 
 #include <webgpu/webgpu.hpp>
 
+#include "../circuit_info.h"
 #include "../editor_windows/editor_window_manager.h"
 #include "../resources/texture.h"
 #include "device_window.h"
 #include "simulator/state_vector.h"
-#include "../editor_windows/circuit_info_processor.h"
 
 /// The application (singleton)
 class Application {

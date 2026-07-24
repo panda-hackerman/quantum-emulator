@@ -2,7 +2,7 @@
 // Created by Eli Michaud on 7/13/2026.
 //
 
-#include "circuit_info_processor.h"
+#include "circuit_info.h"
 
 void ComputedCircuitInfo::RecalculateData(const StateVector &state_vector) {
   const int num_qubits = state_vector.NumQubits();
