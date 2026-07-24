@@ -21,6 +21,9 @@ struct ComputedCircuitInfo {
   std::vector<double> amplitudes;
   std::vector<double> amplitudes_nonzero;
 
+  // List of size N where [k] = chance of this qubit being 1
+  std::vector<double> chance_of_one;
+
   void RecalculateData(const StateVector &state_vector);
 };
 
