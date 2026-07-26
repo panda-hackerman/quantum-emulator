@@ -1,0 +1,18 @@
+cff-version: 1.2.0
+title: A Small Visual Quantum Emulator
+message: 'If you want to cite this software, use this metadata!'
+type: software
+authors:
+  - given-names: Eli Antoine
+    family-names: Michaud
+    email: eli@michaud.dev
+    affiliation: The American University of Paris
+    orcid: 'https://orcid.org/0009-0007-0171-5488'
+repository-code: 'https://github.com/panda-hackerman/quantum-emulator'
+url: 'https://michaud.dev/projects/quantum-emulator/play/'
+abstract: >-
+  This emulator is written in C++ and aims to simulate a
+  small number of qubits while providing an understandable
+  user interface, to serve as an educational tool, and to be
+  (reasonably) optimized.
+license: Unlicense
