@@ -8,9 +8,11 @@ A quantum emulator is a piece of software which emulates the function of a quant
 This specific emulator is written in C++ and aims to simulate a small number of qubits while providing an understandable user interface, 
 to serve as an educational tool, and to be (reasonably) optimized.
 
+The emulator is also cross-platform, and can be run as a native application or even for the web. (Try it [here](https://michaud.dev/projects/quantum-emulator/play/)!)
+
 ## Table of Contents
 - [Features](#features)
-- [How to compile](#how-to-compile)
+- [How to compile](#how-to-compile-from-source)
   - [How to compile using an IDE](#using-an-ide)
   - [How to compile using the commandline](#using-the-commandline)
   - [How to compile for the web](#for-the-web)
@@ -19,9 +21,9 @@ to serve as an educational tool, and to be (reasonably) optimized.
 - [License](#license)
 
 ## Features
-A small-scale quantum emulator. Can simulate a small number of qubits (~8), and display information about the circuit.
+A small-scale quantum emulator. Can simulate a small number of qubits (up to 8), and display information about the state vector and the qubits.
 
-## How to Compile
+## How to Compile from Source
 This project is theoretically cross-platform should be able to be compiled on Windows, macOS, and Linux.
 However, I've only verified this on Windows 10 and 11.
 
