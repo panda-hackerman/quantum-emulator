@@ -86,15 +86,22 @@ const Circuit::Matrix_T *Circuit::GetMatrixUnsafe(const GridSize_T qubit,
   return nullptr;
 }
 
-std::vector<Circuit::Part> Circuit::GetPartsInLayer(const GridSize_T layer) const {
+std::span<Circuit::Part> Circuit::GetPartsInLayer(const GridSize_T layer) {
   AssertInRange(0, layer);
 
   const auto arr_begin = parts_array_.begin();
-
   const auto first = arr_begin + IndexOf(0, layer);
-  const auto last = first + num_qubits_;
 
-  return {first, last};
+  return {first, first + num_qubits_};
+}
+
+std::span<const Circuit::Part> Circuit::GetPartsInLayer(const GridSize_T layer) const {
+  AssertInRange(0, layer);
+
+  const auto arr_begin = parts_array_.begin();
+  const auto first = arr_begin + IndexOf(0, layer);
+
+  return {first, first + num_qubits_};
 }
 
 std::vector<const Circuit::Matrix_T *> Circuit::GetMatricesInLayer(const GridSize_T layer) const {
@@ -111,7 +118,9 @@ std::vector<const Circuit::Matrix_T *> Circuit::GetMatricesInLayer(const GridSiz
   return out;
 }
 
-bool Circuit::IsValidLayer(const std::vector<Part> &layer) {
+bool Circuit::IsValidLayer(std::span<Part> layer) {
+  using enum Part;
+
   const std::size_t num_qubits = layer.size();
 
   if (num_qubits > kMaxQubits) return false;
@@ -119,24 +128,24 @@ bool Circuit::IsValidLayer(const std::vector<Part> &layer) {
 
   int num_swaps = 0;
   int num_matrices = 0;
-  int total_not_empty = 0; /* How many (non-empty) parts */
+  int total_nonempty = 0;
 
   for (const Part part : layer) {
-    if (part == Part::kSwap) num_swaps++;
-    if (part == Part::kMatrix2x2) num_matrices++;
-    if (part != Part::kEmpty) total_not_empty++;
+    if (part == kSwap) num_swaps++;
+    if (part == kMatrix2x2) num_matrices++;
+    if (part != kEmpty) total_nonempty++;
 
     if (num_swaps > 2) return false;
   }
 
   return std::ranges::all_of(layer.begin(), layer.end(), [&](const Part part) {
     switch (part) {
-      case Part::kMatrix2x2:
+      case kMatrix2x2:
         return num_swaps == 0;
-      case Part::kSwap:
+      case kSwap:
         return num_matrices == 0;
-      case Part::kMeasure:
-        return total_not_empty == 1;
+      case kMeasure:
+        return total_nonempty == 1;
       default:
         return true;
     }

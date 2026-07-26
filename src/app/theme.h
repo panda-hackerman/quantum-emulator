@@ -63,6 +63,7 @@ inline constexpr float kCircuitLineWidthV = 12;
 inline constexpr auto kCircuitLineColorV = kBlack800Color;
 
 // Font settings
+inline constexpr const char *kFontPath = RESOURCE_DIR "/fonts/cmr10.ttf";
 inline constexpr float kDefaultFontSize = 14;
 
 // General ImGui settings

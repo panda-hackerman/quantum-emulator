@@ -6,14 +6,12 @@
 
 #include <imgui.h>
 
-#include <filesystem>
-
+#include "../application/application.h"
 #include "../resources/editorconfig_handler.h"
 #include "../theme.h"
-#include "custom_windows.h"
+#include "editor_windows.h"
 #include "imgui_internal.h"
 #include "implot.h"
-#include "quantum_circuit/circuit.h"
 
 void EditorWindowManager::Init() {
   if (is_initialized_) return;
@@ -24,17 +22,13 @@ void EditorWindowManager::Init() {
 
   SetImGuiStyle();
 
-  InitFilePath();
+  editorconfig::Init();
 
   ImGuiIO &io = ImGui::GetIO();
-  io.IniFilename = kImGuiIniPath;
+  io.IniFilename = editorconfig::kPath;
   io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
   io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
   io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-
-#ifdef __EMSCRIPTEN__
-  io.MouseDrawCursor = true; // Show mouse cursor on web platform
-#endif
 
   SetupWindows();
 
@@ -52,32 +46,56 @@ void EditorWindowManager::Terminate() {
 
 void EditorWindowManager::DrawWindows() {
 
+  // Stuff to hide or disable tab bar on docking windows
+  // ImGuiWindowClass hide_tab_bar;
+  // hide_tab_bar.DockNodeFlagsOverrideSet = ImGuiDockNodeFlags_HiddenTabBar;
+  //
+  // ImGuiWindowClass no_tab_bar;
+  // no_tab_bar.DockNodeFlagsOverrideSet = ImGuiDockNodeFlags_NoTabBar;
+
   /* SETUP DOCKING*/ {
     const ImGuiID dock_space_id = ImGui::GetID("Docking Space");
     const ImGuiViewport *viewport = ImGui::GetMainViewport();
 
     if (ImGui::DockBuilderGetNode(dock_space_id) == nullptr) {
+
       ImGui::DockBuilderAddNode(dock_space_id, ImGuiDockNodeFlags_DockSpace);
       ImGui::DockBuilderSetNodeSize(dock_space_id, viewport->Size);
 
       ImGuiID dock_id_left = 0;
-      ImGuiID dock_id_main = dock_space_id;
-      ImGui::DockBuilderSplitNode(dock_id_main, ImGuiDir_Left, 0.20f, &dock_id_left, &dock_id_main);
+      ImGuiID dock_id_main_right = 0;
+
       ImGuiID dock_id_left_top = 0;
       ImGuiID dock_id_left_bottom = 0;
-      ImGui::DockBuilderSplitNode(dock_id_left, ImGuiDir_Up, 0.50f, &dock_id_left_top,
+
+      ImGui::DockBuilderSplitNode(dock_space_id, ImGuiDir_Left, 0.31f, &dock_id_left,
+                                  &dock_id_main_right);
+      ImGui::DockBuilderSplitNode(dock_id_left, ImGuiDir_Up, 0.45f, &dock_id_left_top,
                                   &dock_id_left_bottom);
-      ImGui::DockBuilderDockWindow("Circuit Diagram", dock_id_main);
-      // ImGui::DockBuilderDockWindow("Properties", dock_id_left_top); //TODO: Figure out layout
-      ImGui::DockBuilderDockWindow("Circuits", dock_id_left_bottom);
+
+      ImGui::DockBuilderDockWindow(editor::circuit::main_window.name, dock_id_main_right);
+      ImGui::DockBuilderDockWindow(editor::circuit::palette_window.name, dock_id_left_top);
+      ImGui::DockBuilderDockWindow(editor::circuit::info_window.name, dock_id_left_bottom);
+
       ImGui::DockBuilderFinish(dock_space_id);
     }
 
-    ImGui::DockSpaceOverViewport(dock_space_id, viewport, ImGuiDockNodeFlags_PassthruCentralNode);
+    ImGui::DockSpaceOverViewport(dock_space_id, viewport, ImGuiDockNodeFlags_PassthruCentralNode | ImGuiDockNodeFlags_NoDockingOverCentralNode);
   }
 
   for (EditorWindow &window : windows_) {
     if (!window.open) continue;
+
+    ImGuiWindowClass window_class;
+    // window_class.DockNodeFlagsOverrideSet = ImGuiDockNodeFlags_NoDockingOverCentralNode;
+
+    if (window.no_tab_bar) {
+      window_class.DockNodeFlagsOverrideSet |= ImGuiDockNodeFlags_NoTabBar;
+    } else if (window.hide_tab_bar) {
+      window_class.DockNodeFlagsOverrideSet |= ImGuiDockNodeFlags_AutoHideTabBar;
+    }
+
+    ImGui::SetNextWindowClass(&window_class);
 
     bool *is_open = window.can_close ? &window.open : nullptr;
     ImGui::Begin(window.name, is_open, window.flags);
@@ -101,28 +119,13 @@ void EditorWindowManager::DrawWindows() {
 
 void EditorWindowManager::SetupWindows() {
   windows_.clear();
-  circuit_ = Circuit::BuildExampleCircuit();
+
+  editor::circuit::SetExampleCircuit();
 
   // Build windows
-  windows_.emplace_back(EditorWindow{
-      .name = "Circuit Diagram",
-      .on_draw = [&] { circuit_window_.Draw(); },
-      .flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_AlwaysAutoResize |
-               ImGuiWindowFlags_HorizontalScrollbar,
-      .can_close = false,
-  });
-
-  windows_.emplace_back(EditorWindow{
-      .name = "Circuits",
-      .on_draw = [&] { circuit_palette_.Draw(); },
-      .can_close = false,
-  });
-
-  windows_.emplace_back(EditorWindow{
-      .name = "Circuit Info",
-      .on_draw = [&] { circuit_info_.Draw(); },
-      .can_close = false,
-  });
+  windows_.emplace_back(editor::circuit::main_window);
+  windows_.emplace_back(editor::circuit::info_window);
+  windows_.emplace_back(editor::circuit::palette_window);
 }
 
 void SetImGuiStyle() {
@@ -131,8 +134,7 @@ void SetImGuiStyle() {
   ImVec4 *colors = style->Colors;
 
   // Font
-  // io->Fonts->AddFontDefaultVector(); // ProggyForever font
-  io->Fonts->AddFontFromFileTTF(RESOURCE_DIR "/fonts/cmr10.ttf", theme::kDefaultFontSize);
+  io->Fonts->AddFontFromFileTTF(theme::kFontPath, theme::kDefaultFontSize);
 
   // DPI Aware
   io->ConfigDpiScaleFonts = true;

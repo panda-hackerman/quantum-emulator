@@ -2,7 +2,7 @@
 
 A quantum emulator is a piece of software which emulates the function of a quantum computer, using a normal (traditional) computer.
 
-This specific emulator is written in C++, and aims to simulate a small number of qubits while providing an understandable user iterface, 
+This specific emulator is written in C++, and aims to simulate a small number of qubits while providing an understandable user interface, 
 to serve as an educational tool, and to be reasonably optimized.
 
 ## Table of Contents
@@ -19,7 +19,7 @@ to serve as an educational tool, and to be reasonably optimized.
 A small-scale quantum emulator. Can simulate a small number of qubits (~8), and display information about the circuit.
 
 ## How to Compile
-This project is theoretically cross-platform should be able to be compiled on Windows, MacOS, and Linux.
+This project is theoretically cross-platform should be able to be compiled on Windows, macOS, and Linux.
 However, I've only verified this on Windows 10 and 11.
 
 > [!IMPORTANT]
@@ -43,7 +43,7 @@ which I personally use and is free for non-commercial use.
 Enable `debug-wgpu`, `release-wgpu` (optional), and `gtest-wgpu` (if you want to [run tests](#running-tests));
 and disable `Debug`, which was enabled by default.
 - Click OK, and CMake should set up the project for you (wait for the progress bar in the bottom right).
-- In the top right, select your prefered profile (`debug-wgpu` or `release-wgpu`),
+- In the top right, select your preferred profile (`debug-wgpu` or `release-wgpu`),
 ensure that "**App**" is selected as the configuration, and click the green play button.
 - The project should be built and run!
 
@@ -83,12 +83,12 @@ This project can also be run on the web! It's a bit finicky, so be warned.
 - [Emscripten](https://emscripten.org/docs/getting_started/downloads.html) (on Windows, in your PATH)
 - [Python 3.8](https://www.python.org/downloads/) or above.
 - [LLVM/ Clang](https://github.com/mstorsjo/llvm-mingw)
-- Xcode Command Line Tools (MacOS Only)
-- 10.14 Mojave or above (MacOS Only)
+- Xcode Command Line Tools (macOS Only)
+- 10.14 Mojave or above (macOS Only)
 
 #### Steps:
-In the root project folder, run `web-build.bat` (if you're on Windows), 
-or run the following commands in your terminal:
+In the root project folder, run `web-build.sh` (or `.bat` if you're on Windows);
+or, run the following commands in your terminal:
 ```bash
 # Generate the cmake files. We're building from source, 
 # since I couldn't get the pre-compiled option to work.
@@ -107,7 +107,7 @@ python -m http.server -d build\web\dist\Emscripten
 This project uses GoogleTest (gtest) for running C++ tests.
 
 ### Tests in an IDE
-Running the tests in an IDE is straightforwward, most have build-in support. 
+Running the tests in an IDE is straightforward, most have build-in support. 
 For example, in CLion, simply select `EngineTest` from the configurations dropdown in the top right.
 
 > [!TIP]

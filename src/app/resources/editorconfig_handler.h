@@ -9,11 +9,20 @@
 #include <filesystem>
 #include <iostream>
 
+#include "editorconfig_circuit.h"
 #include "imgui.h"
+#include "imgui_internal.h"
+#endif // __EMSCRIPTEN__
 
-static constexpr const char *kImGuiIniPath = "data/editorconfig.ini";
+/// Editor Config (i.e. imgui.ini, by default) settings
+namespace editorconfig {
+
+#ifndef __EMSCRIPTEN__
+inline constexpr const char *kPath = "data/editorconfig.ini"; ///< Relative ath to editorconfig file
+inline constexpr bool kCircuitPersistsAfterReload = true; ///< True if circuit settings are saved
 #else  // __EMSCRIPTEN__
-static constexpr const char *kImGuiIniPath = nullptr; // No ini file on web...
+inline constexpr const char *kPath = nullptr; // No ini file on web...
+inline constexpr bool kCircuitPersistsAfterReload = false;
 #endif // __EMSCRIPTEN__
 
 inline bool InitFilePath() {
@@ -21,23 +30,52 @@ inline bool InitFilePath() {
   namespace fs = std::filesystem;
 
   try {
-    const fs::path relative_path(kImGuiIniPath);
-    fs::path absolute_path = absolute(relative_path);
-    absolute_path.remove_filename();
+    if constexpr (kPath != nullptr) {
+      const fs::path relative_path(kPath);
+      fs::path absolute_path = absolute(relative_path);
+      absolute_path.remove_filename();
 
-    if (!fs::exists(absolute_path)) {
-      fs::create_directories(absolute_path);
-      ImGui::SaveIniSettingsToDisk(kImGuiIniPath);
+      if (!fs::exists(absolute_path)) {
+        fs::create_directories(absolute_path);
+      }
     }
 
     return true;
-  } catch (std::exception ex) {
+  } catch (std::exception &ex) {
     std::cerr << "Couldn't create editor config directory: " << ex.what();
     return false;
   }
-#else
+#else // #ifndef __EMSCRIPTEN__
   return true;
+#endif// #ifndef __EMSCRIPTEN__ #else
+}
+
+inline void Init() {
+#ifndef __EMSCRIPTEN__
+  // Add custom settings
+  if constexpr (kCircuitPersistsAfterReload) {
+    const ImGuiSettingsHandler circuit_handler = circuit::BuildHandler();
+    ImGui::AddSettingsHandler(&circuit_handler);
+  }
+#endif
+
+  // Create folders for file path
+  InitFilePath();
+}
+
+inline void SaveToDiskManual() {
+#ifndef __EMSCRIPTEN__
+  const ImGuiContext *ctx = ImGui::GetCurrentContext();
+  const ImGuiIO *io = &ImGui::GetIO();
+
+  const auto filename = io->IniFilename;
+
+  if (ctx->SettingsLoaded && io->IniFilename != nullptr) {
+    ImGui::SaveIniSettingsToDisk(filename);
+  }
 #endif
 }
+
+} // namespace editorconfig
 
 #endif // EDITORCONFIG_HANDLER_H
