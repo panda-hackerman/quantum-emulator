@@ -37,7 +37,7 @@ inline constinit struct GuiData {
   bool show_qubit_info = false;
 
   // For Circuit Info Window
-  bool skip_zero_probabilities = true;
+  bool skip_zero_probabilities = false;
 } gui_data{};
 
 /* -- Drag and drop info -- */
