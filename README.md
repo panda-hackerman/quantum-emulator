@@ -1,9 +1,12 @@
-# A (Small) Visual Quantum Emulator
+# A Small Visual Quantum Emulator
+
+<img width="1400" alt="A quantum circuit diagram, in the emuator. To the left, a palette of quantum gates. On the right, a graph showing the probability density as a function of the output." 
+  src="https://github.com/user-attachments/assets/1055851c-d2b5-4553-a2b8-a07d8b7202ee"/>
 
 A quantum emulator is a piece of software which emulates the function of a quantum computer, using a normal (traditional) computer.
 
-This specific emulator is written in C++, and aims to simulate a small number of qubits while providing an understandable user interface, 
-to serve as an educational tool, and to be reasonably optimized.
+This specific emulator is written in C++ and aims to simulate a small number of qubits while providing an understandable user interface, 
+to serve as an educational tool, and to be (reasonably) optimized.
 
 ## Table of Contents
 - [Features](#features)
