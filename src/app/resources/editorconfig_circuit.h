@@ -21,12 +21,12 @@ inline auto scan_func = sscanf_s;
 
 inline constexpr const char *kTypeName = "CircuitEditor";
 
-static void *ReadOpen(ImGuiContext *, ImGuiSettingsHandler *, const char *) {
+inline void *ReadOpen(ImGuiContext *, ImGuiSettingsHandler *, const char *) {
   editor::circuit::ClearEditor();
-  return nullptr;
+  return &Application::Instance().circuit;
 }
 
-static void ReadLine(ImGuiContext *, ImGuiSettingsHandler *, void *, const char *line) {
+inline void ReadLine(ImGuiContext *, ImGuiSettingsHandler *, void *, const char *line) {
   if (line == nullptr || line[0] == '\0') return;
 
   int num_qubits;
@@ -59,7 +59,7 @@ static void ReadLine(ImGuiContext *, ImGuiSettingsHandler *, void *, const char 
   }
 }
 
-static void WriteAll(ImGuiContext *, ImGuiSettingsHandler *handler, ImGuiTextBuffer *buf) {
+inline void WriteAll(ImGuiContext *, ImGuiSettingsHandler *handler, ImGuiTextBuffer *buf) {
   const auto num_qubits = static_cast<Circuit::GridSize_T>(editor::circuit::gui_data.num_qubits);
   const auto num_layers = static_cast<Circuit::GridSize_T>(editor::circuit::gui_data.num_layers);
 
@@ -82,7 +82,7 @@ static void WriteAll(ImGuiContext *, ImGuiSettingsHandler *handler, ImGuiTextBuf
   }
 }
 
-static void ClearAll(ImGuiContext *, ImGuiSettingsHandler *) {
+inline void ClearAll(ImGuiContext *, ImGuiSettingsHandler *) {
   editor::circuit::ClearEditor();
 }
 
@@ -92,7 +92,7 @@ inline ImGuiSettingsHandler BuildHandler() {
 
   handler.TypeName = kTypeName;
   handler.TypeHash = ImHashStr(kTypeName);
-  handler.ClearAllFn = ClearAll;
+  // handler.ClearAllFn = ClearAll;
   handler.ReadOpenFn = ReadOpen;
   handler.ReadLineFn = ReadLine;
   handler.WriteAllFn = WriteAll;
