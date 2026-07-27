@@ -2,13 +2,14 @@
 // Created by Eli Michaud on 6/25/2026.
 //
 
+#include "editor_windows.h"
+
 #include <numeric>
 #include <utility>
 
 #include "../application/application.h"
 #include "../theme.h"
 #include "editor_window_manager.h"
-#include "editor_windows.h"
 #include "imgui_internal.h"
 #include "implot.h"
 
@@ -66,6 +67,8 @@ EditorWindow palette_window = {
 
 void DrawEditor() {
   const TextureManager &texture_manager = Application::Instance().GetTextureManager();
+  const ComputedCircuitInfo &circuit_info = Application::Instance().current_circuit_info;
+
   const ImGuiStyle *style = &ImGui::GetStyle();
 
   ImGui::PushItemWidth(ImGui::GetFontSize() * 6);
@@ -269,7 +272,10 @@ void DrawEditor() {
       // [COLUMN N+2 - Qubit Info]
       if (gui_data.show_qubit_info) {
         ImGui::TableSetColumnIndex(num_table_cols - 1);
-        ImGui::Text("Info:");
+
+        const int chance =
+            static_cast<int>(std::round(100.0 * circuit_info.chance_of_one.at(qubit)));
+        ImGui::Text("%d%% Prob. of 1", chance);
       }
 
       ImGui::PopID(); // qubit

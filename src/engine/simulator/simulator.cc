@@ -6,6 +6,8 @@
 
 #include "simulator.h"
 
+#include <numeric>
+
 #include "math/bitwise_math.h"
 #include "math/constants.h"
 
@@ -112,8 +114,8 @@ void ApplySwap(StateVector &state_vector, const Circuit::GridSize_T qubit_a,
   for (int k = 0; k < out.Size(); ++k) {
     if ((k & inclusion_mask) != desired_mask) continue; // Skip
 
-    const auto ath_bit_of_k = bit::GetBit<int>(k, qubit_a);
-    const auto bth_bit_of_k = bit::GetBit<int>(k, qubit_b);
+    const auto ath_bit_of_k = bit::GetBit(k, qubit_a);
+    const auto bth_bit_of_k = bit::GetBit(k, qubit_b);
 
     if (ath_bit_of_k == 1 && bth_bit_of_k == 0) {
       const int k_2 = (k & (~mask_a)) | mask_b; // Turn off bit A, turn on bit B.
@@ -147,7 +149,7 @@ void ApplyLayerQubitWise(StateVector &state_vector, const Circuit &circuit,
   static constexpr std::size_t invalid_qubit_index = Circuit::kMaxQubits + 1;
 
   const auto matrix_list = circuit.GetMatricesInLayer(layer);
-  auto parts_list = circuit.GetPartsInLayer(layer);
+  const auto parts_list = circuit.GetPartsInLayer(layer);
 
   /// Indices of swap gates (if they exist)
   std::array<std::size_t, 2> swap_indices = {{invalid_qubit_index, invalid_qubit_index}};
@@ -166,27 +168,93 @@ void ApplyLayerQubitWise(StateVector &state_vector, const Circuit &circuit,
   }
 }
 
-Matrix2D<Complex> ComputeLayerExplicit(const std::vector<Circuit::Part> &parts,
-                                       const std::vector<const Circuit::Matrix_T *> &matrices) {
-  if (parts.size() != matrices.size()) {
-    throw std::invalid_argument("Layer parts list and matrix list must be the same length");
+Matrix2D<Complex> PartialDensityTraceImpl(const StateVector &state_vector,
+                                          const std::span<const Circuit::GridSize_T> to_trace_out,
+                                          const std::span<const Circuit::GridSize_T> to_keep) {
+
+  const Circuit::GridSize_T num_qubits = state_vector.NumQubits();
+  const std::size_t num_qubits_to_trace = to_trace_out.size();
+  const std::size_t num_qubits_to_keep = to_keep.size();
+
+  if (num_qubits_to_trace + num_qubits_to_keep != num_qubits) {
+    throw std::invalid_argument("The qubits to trace out and to keep, together, "
+                                "must contain every qubit!");
   }
 
-  // We initialize to the 1x1 identity matrix = [1]
-  Matrix2D<Complex> out_matrix{1, 1};
-  out_matrix.At(0, 0) = 1;
+  // Dimension of space being traced out
+  const std::size_t trace_dimension = bit::TwoPowN(num_qubits_to_trace);
+  const std::size_t out_size = bit::TwoPowN(num_qubits_to_keep);
 
-  // Number of qubits
-  const Circuit::GridSize_T n_qubits = static_cast<Circuit::GridSize_T>(parts.size());
+  Matrix2D<Complex> output = {out_size, out_size};
 
-  // = [1] ⊗ [U_{n-1}] ⊗ ... ⊗ [U_0]
-  for (int i = (n_qubits - 1); i >= 0; --i) {
-    if (parts[i] == Circuit::Part::kMatrix2x2) {
-      out_matrix = out_matrix.Tensor(*(matrices[i]));
-    } else {
-      out_matrix = out_matrix.Tensor(matrix::kIdentity);
+  // Get rearranged lookup table
+  std::vector<std::size_t> rearrange_lookup;
+  rearrange_lookup.reserve(out_size);
+
+  for (std::size_t i = 0; i < out_size; ++i) {
+    rearrange_lookup.emplace_back(bit::RearrangeBits(i, to_keep));
+  }
+
+  // Generate 1st triangular half
+  for (std::size_t shared_bits = 0; shared_bits < trace_dimension; ++shared_bits) {
+    const std::size_t shared_rearranged = bit::RearrangeBits(shared_bits, to_trace_out);
+
+    for (std::size_t output_row = 0; output_row < out_size; ++output_row) {
+      const std::size_t input_row = shared_rearranged | rearrange_lookup[output_row];
+
+      for (std::size_t output_col = 0; output_col <= output_row; ++output_col) {
+        const std::size_t input_col = shared_rearranged | rearrange_lookup[output_col];
+
+        // RHS is equivalent to M.At(input_row, input_col) where M = |p><p|
+        output.At(output_row, output_col) = state_vector[input_row] * conj(state_vector[input_col]);
+      }
     }
   }
 
-  return out_matrix;
+  // Copy 2nd triangular half & conjugate
+  for (std::size_t row = 0; row < out_size; ++row) {
+    for (std::size_t col = 0; col < row; ++col) {
+      output.At(col, row) = conj(output.At(row, col));
+    }
+  }
+
+  return output;
+}
+
+Matrix2D<Complex> PartialDensityTraceOut(const StateVector &state_vector,
+                                         const std::span<const Circuit::GridSize_T> to_trace_out) {
+
+  const Circuit::GridSize_T num_qubits = state_vector.NumQubits();
+  const std::size_t num_to_trace = to_trace_out.size();
+  const std::size_t num_to_keep = num_qubits - num_to_trace;
+
+  std::vector<Circuit::GridSize_T> to_keep;
+  to_keep.reserve(num_to_keep);
+
+  for (Circuit::GridSize_T qubit = 0; qubit < num_qubits; ++qubit) {
+    if (!std::ranges::contains(to_trace_out, qubit)) {
+      to_keep.push_back(qubit);
+    }
+  }
+
+  return PartialDensityTraceImpl(state_vector, to_trace_out, to_keep);
+}
+
+Matrix2D<Complex> PartialDensityTraceIn(const StateVector &state_vector,
+                                        const std::span<const Circuit::GridSize_T> to_keep) {
+
+  const Circuit::GridSize_T num_qubits = state_vector.NumQubits();
+  const std::size_t num_to_keep = to_keep.size();
+  const std::size_t num_to_trace = num_qubits - num_to_keep;
+
+  std::vector<Circuit::GridSize_T> to_trace_out;
+  to_trace_out.reserve(num_to_trace);
+
+  for (Circuit::GridSize_T qubit = 0; qubit < num_qubits; ++qubit) {
+    if (!std::ranges::contains(to_keep, qubit)) {
+      to_trace_out.push_back(qubit);
+    }
+  }
+
+  return PartialDensityTraceImpl(state_vector, to_trace_out, to_keep);
 }

@@ -34,6 +34,8 @@ void ApplyMatrixQubitWise(StateVector &state_vector, const Circuit::Matrix_T *ma
 /**
  * Simulate the effect of a swap gate on a state vector.
  *
+ * @remark Implementation based on McGuffin et al. \cite mcguffin_2025.
+ *
  * @param state_vector The input state vector. Will be modified in-place.
  * @param qubit_a The first qubit to swap
  * @param qubit_b The second qubit to swap
@@ -44,6 +46,7 @@ void ApplySwap(StateVector &state_vector, Circuit::GridSize_T qubit_a, Circuit::
 
 /**
  * Simulate an entire circuit using the Qubit-wise Multiply Method.
+ *
  * @param circuit The circuit to simulate
  * @param state_vector The input (the starting state vector). Modified in-place.
  */
@@ -58,16 +61,47 @@ void ApplyCircuitQubitWise(const Circuit &circuit, StateVector &state_vector);
 void ApplyLayerQubitWise(StateVector &state_vector, const Circuit &circuit,
                          Circuit::GridSize_T layer);
 
-// TODO: Control Bits
 /**
- * Explicitly compute the matrix for a layer.
- * @warning Doesn't work with control/ anti-control qubits, or swap gates!
- * @param parts A list of parts in the layer
- * @param matrices A list of matrices in the later
- * @return A 2^n by 2^n matrix
+ * Compute the partial trace to get a reduced density matrix.
+ *
+ * @param state_vector The state vector, with which to compute the density matrix. The density
+ *                     matrix for the partial trace will be `|p><p|`, where p is the state vector.
+ * @param to_trace_out Which qubits to trace out (i.e. discard), sorted
+ * @param to_keep      Which qubits to keep (not trace out), sorted
+ *
+ * @warning The to_trace_out and to_keep inputs must be sorted, and when combined must contain every
+ * qubit from 0 to N-1.
+ *
+ * @see PartialDensityTraceOut, PartialDensityTraceIn
+ *
+ * @remark Implementation based on McGuffin et al. \cite mcguffin_2025.
+ *
+ * @return The reduced density matrix.
  */
-[[nodiscard]] Matrix2D<Complex> ComputeLayerExplicit(
-    const std::vector<Circuit::Part> &parts,
-    const std::vector<const Circuit::Matrix_T *> &matrices);
+Matrix2D<Complex> PartialDensityTraceImpl(const StateVector &state_vector,
+                                          std::span<const Circuit::GridSize_T> to_trace_out,
+                                          std::span<const Circuit::GridSize_T> to_keep);
+
+/**
+ * Compute the partial trace to get a reduced density matrix.
+ *
+ * @param state_vector The state vector, with which to compute the density matrix. The density
+ *                     matrix for the partial trace will be `|p><p|`, where p is the state vector.
+ * @param to_trace_out Which qubits to trace out (i.e. discard), sorted
+ * @return
+ */
+Matrix2D<Complex> PartialDensityTraceOut(const StateVector &state_vector,
+                                         std::span<const Circuit::GridSize_T> to_trace_out);
+
+/**
+ * Compute the partial trace to get a reduced density matrix.
+ *
+ * @param state_vector The state vector, with which to compute the density matrix. The density
+ *                     matrix for the partial trace will be `|p><p|`, where p is the state vector.
+ * @param to_keep      Which qubits to keep (not trace out), sorted
+ * @return
+ */
+Matrix2D<Complex> PartialDensityTraceIn(const StateVector &state_vector,
+                                        std::span<const Circuit::GridSize_T> to_keep);
 
 #endif // SIMULATOR_H

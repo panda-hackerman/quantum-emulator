@@ -34,10 +34,10 @@ inline constinit struct GuiData {
   // For Circuit Editor Window
   int num_qubits = -1;
   int num_layers = -1;
-  bool show_qubit_info = true;
+  bool show_qubit_info = false;
 
   // For Circuit Info Window
-  bool skip_zero_probabilities = true;
+  bool skip_zero_probabilities = false;
 } gui_data{};
 
 /* -- Drag and drop info -- */
