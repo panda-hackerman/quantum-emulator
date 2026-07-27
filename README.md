@@ -1,6 +1,6 @@
 # A Small Visual Quantum Emulator
 
-<img width="1400" alt="A quantum circuit diagram, in the emuator. To the left, a palette of quantum gates. On the right, a graph showing the probability density as a function of the output." 
+<img width="1400" alt="A quantum circuit diagram, in the emulator. To the left, a palette of quantum gates. On the right, a graph showing the probability density as a function of the output." 
   src="https://github.com/user-attachments/assets/1055851c-d2b5-4553-a2b8-a07d8b7202ee"/>
 
 A quantum emulator is a piece of software which emulates the function of a quantum computer, using a normal (traditional) computer.
@@ -12,16 +12,24 @@ The emulator is also cross-platform, and can be run as a native application or e
 
 ## Table of Contents
 - [Features](#features)
-- [How to compile](#how-to-compile-from-source)
-  - [How to compile using an IDE](#using-an-ide)
-  - [How to compile using the commandline](#using-the-commandline)
-  - [How to compile for the web](#for-the-web)
+- [Installation](#how-to-install)
+- [Compiling from Source](#how-to-compile-from-source)
+  - [Using an IDE](#using-an-ide)
+  - [Using the commandline](#using-the-commandline)
+  - [For the web](#for-the-web)
 - [Running Tests](#running-tests)
 - [Contributing](#contributing)
 - [License](#license)
 
 ## Features
-A small-scale quantum emulator. Can simulate a small number of qubits (up to 8), and display information about the state vector and the qubits.
+- Edit and simulate quantum circuits
+- Simulate up to 8 qubits and 31 layers
+- Visual grid-based editor
+- See information about the state vector and qubits
+- Run natively or on the web
+
+## How to Install
+You can download pre-compiled binaries from the [releases page](https://github.com/panda-hackerman/quantum-emulator/releases)!
 
 ## How to Compile from Source
 This project is theoretically cross-platform should be able to be compiled on Windows, macOS, and Linux.
