@@ -178,43 +178,6 @@ class Matrix2D : public IMatrix2D<Type>,
   friend class Matrix2D;
 
 protected:
-  /// Helper class to build a dynamic/ non-dynamic matrix.
-  template <typename T, std::size_t R, std::size_t C>
-  struct Builder {
-    std::array<std::array<T, C>, R> data = {};
-
-    constexpr Builder(std::size_t, std::size_t) {}
-
-    constexpr void Put(std::size_t r, std::size_t c, const T &element) { data[r][c] = element; }
-
-    [[nodiscard]] constexpr Matrix2D<T, R, C> Build() { return Matrix2D<T, R, C>(data); }
-  };
-
-  /// Helper class to build a dynamic/ non-dynamic matrix.
-  template <typename T>
-  struct Builder<T, matrix::kDynamicSize, matrix::kDynamicSize> {
-    std::vector<std::vector<T>> data;
-    const std::size_t num_rows;
-    const std::size_t num_cols;
-
-    constexpr Builder(const std::size_t num_rows, const std::size_t num_cols) :
-        data(num_rows, std::vector<T>(num_cols)), num_rows{num_rows}, num_cols{num_cols} {}
-
-    constexpr void Put(std::size_t r, std::size_t c, const T &element) { data[r][c] = element; }
-
-    [[nodiscard]] constexpr Matrix2D<T> Build() const {
-      Matrix2D<T> matrix_out{num_rows, num_cols};
-
-      for (std::size_t r = 0; r < num_rows; ++r) {
-        for (std::size_t c = 0; c < num_cols; ++c) {
-          matrix_out.At(r, c) = data[r][c];
-        }
-      }
-
-      return matrix_out;
-    }
-  };
-
   /// Convert 2D coordinates to the flattened index
   [[nodiscard]] constexpr std::size_t GetIndex(const std::size_t row,
                                                const std::size_t col) const noexcept {
@@ -263,6 +226,56 @@ public:
   using Row_T = MatrixRow<Type>;
   using RowConst_T = MatrixRow<const Type>;
   using DataHolderType = MatrixDataType<Type, Rows, Cols>;
+
+  /// Helper class to build a dynamic/ non-dynamic matrix.
+  template <typename T, std::size_t R, std::size_t C>
+  struct MatrixBuilder {
+    std::array<std::array<T, C>, R> data = {};
+
+    constexpr MatrixBuilder(std::size_t, std::size_t) {}
+
+    constexpr void Put(std::size_t r, std::size_t c, const T &element) { data[r][c] = element; }
+
+    [[nodiscard]] constexpr Matrix2D<T, R, C> Build() { return Matrix2D<T, R, C>(data); }
+  };
+
+  /// Helper class to build a dynamic/ non-dynamic matrix.
+  template <typename T>
+  struct MatrixBuilder<T, matrix::kDynamicSize, matrix::kDynamicSize> {
+    std::vector<std::vector<T>> data;
+    const std::size_t num_rows;
+    const std::size_t num_cols;
+
+    constexpr MatrixBuilder(const std::size_t num_rows, const std::size_t num_cols) :
+        data(num_rows, std::vector<T>(num_cols)), num_rows{num_rows}, num_cols{num_cols} {}
+
+    constexpr void Put(std::size_t r, std::size_t c, const T &element) { data[r][c] = element; }
+
+    [[nodiscard]] constexpr Matrix2D<T> Build() const {
+      Matrix2D<T> matrix_out{num_rows, num_cols};
+
+      for (std::size_t r = 0; r < num_rows; ++r) {
+        for (std::size_t c = 0; c < num_cols; ++c) {
+          matrix_out.At(r, c) = data[r][c];
+        }
+      }
+
+      return matrix_out;
+    }
+  };
+
+  [[nodiscard]] static MatrixBuilder<Type, Rows, Cols> Builder() noexcept
+    requires(!kIsDynamic)
+  {
+    return MatrixBuilder<Type, Rows, Cols>(Rows, Cols);
+  }
+
+  [[nodiscard]] static MatrixBuilder<Type, Rows, Cols> Builder(std::size_t rows,
+                                                               std::size_t cols) noexcept
+    requires(kIsDynamic)
+  {
+    return {rows, cols};
+  }
 
   constexpr ~Matrix2D() override = default;
 
@@ -351,7 +364,7 @@ public:
     const std::size_t num_rows_og = !kIsDynamic ? Rows : NumRows(); /// # Rows before transpose
     const std::size_t num_cols_og = !kIsDynamic ? Cols : NumCols(); /// # Cols before transpose
 
-    Builder<Type, Cols, Rows> builder{num_cols_og, num_rows_og};
+    MatrixBuilder<Type, Cols, Rows> builder{num_cols_og, num_rows_og};
 
     for (std::size_t r = 0; r < num_rows_og; ++r) {
       for (std::size_t c = 0; c < num_cols_og; ++c) {
@@ -368,7 +381,7 @@ public:
     const std::size_t num_rows = !kIsDynamic ? Rows : NumRows();
     const std::size_t num_cols = !kIsDynamic ? Cols : NumCols();
 
-    Builder<Type, Rows, Cols> builder{num_rows, num_cols};
+    MatrixBuilder<Type, Rows, Cols> builder{num_rows, num_cols};
 
     for (std::size_t r = 0; r < num_rows; ++r) {
       for (std::size_t c = 0; c < num_cols; ++c) {
@@ -385,7 +398,7 @@ public:
     const std::size_t num_rows_og = !kIsDynamic ? Rows : NumRows(); /// # Rows before transpose
     const std::size_t num_cols_og = !kIsDynamic ? Cols : NumCols(); /// # Cols before transpose
 
-    Builder<Type, Cols, Rows> builder{num_cols_og, num_rows_og};
+    MatrixBuilder<Type, Cols, Rows> builder{num_cols_og, num_rows_og};
 
     for (std::size_t r = 0; r < num_rows_og; ++r) {
       for (std::size_t c = 0; c < num_cols_og; ++c) {
@@ -455,7 +468,7 @@ public:
     constexpr std::size_t result_cols_v = kIsDynamic || other_dynamic ? matrix::kDynamicSize : Cols;
 
     using Result_T = tmp::addition_result_t<Type, OtherType>;
-    Builder<Result_T, result_rows_v, result_cols_v> builder{num_rows, num_cols};
+    MatrixBuilder<Result_T, result_rows_v, result_cols_v> builder{num_rows, num_cols};
 
     for (std::size_t r = 0; r < num_rows; ++r) {
       for (std::size_t c = 0; c < num_cols; ++c) {
@@ -495,7 +508,7 @@ public:
     constexpr std::size_t result_cols_v = kIsDynamic || other_dynamic ? matrix::kDynamicSize : Cols;
 
     using Result_T = tmp::subtract_result_t<Type, OtherType>;
-    Builder<Result_T, result_rows_v, result_cols_v> builder{num_rows, num_cols};
+    MatrixBuilder<Result_T, result_rows_v, result_cols_v> builder{num_rows, num_cols};
 
     for (std::size_t r = 0; r < num_rows; ++r) {
       for (std::size_t c = 0; c < num_cols; ++c) {
@@ -520,7 +533,7 @@ public:
     const std::size_t num_cols = !kIsDynamic ? Cols : NumCols();
 
     using Result_T = tmp::multiply_result_t<ScalarType, Type>;
-    Builder<Result_T, Rows, Cols> builder{num_rows, num_cols};
+    MatrixBuilder<Result_T, Rows, Cols> builder{num_rows, num_cols};
 
     for (std::size_t r = 0; r < num_rows; ++r) {
       for (std::size_t c = 0; c < num_cols; ++c) {
@@ -563,7 +576,7 @@ public:
     constexpr std::size_t result_cols_v = output_dynamic ? matrix::kDynamicSize : OtherCols;
 
     using Result_T = tmp::multiply_result_t<Type, OtherType>;
-    Builder<Result_T, result_rows_v, result_cols_v> builder{num_rows, other_num_cols};
+    MatrixBuilder<Result_T, result_rows_v, result_cols_v> builder{num_rows, other_num_cols};
 
     for (std::size_t r = 0; r < num_rows; ++r) {
       for (std::size_t c = 0; c < other_num_cols; ++c) {
@@ -601,7 +614,7 @@ public:
     constexpr std::size_t cols_type_v = output_dynamic ? matrix::kDynamicSize : result_cols;
 
     using Result_T = tmp::multiply_result_t<Type, OtherType>;
-    Builder<Result_T, rows_type_v, cols_type_v> builder{result_rows, result_cols};
+    MatrixBuilder<Result_T, rows_type_v, cols_type_v> builder{result_rows, result_cols};
 
     // The mega-loop !
     for (std::size_t row_a = 0; row_a < num_rows; ++row_a) {

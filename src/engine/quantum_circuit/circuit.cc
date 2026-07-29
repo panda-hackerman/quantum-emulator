@@ -7,11 +7,15 @@
 #include <iostream>
 
 void Circuit::AddEmpty(const GridSize_T qubit, const GridSize_T layer) {
+  AssertInCurrentRange(qubit, layer);
+
   id_to_matrix_.Remove(IndexOf(qubit, layer));
   parts_array_[IndexOf(qubit, layer)] = Part::kEmpty;
 }
 
 void Circuit::AddGate(const GridSize_T qubit, const GridSize_T layer, const Matrix_T *matrix) {
+  AssertInCurrentRange(qubit, layer);
+
   if (matrix->NumCols() != 2 || matrix->NumRows() != 2) {
     throw std::invalid_argument("A single qubit gate must be a 2x2 matrix!");
   }
@@ -21,21 +25,29 @@ void Circuit::AddGate(const GridSize_T qubit, const GridSize_T layer, const Matr
 }
 
 void Circuit::AddControlBit(const GridSize_T qubit, const GridSize_T layer) {
+  AssertInCurrentRange(qubit, layer);
+
   id_to_matrix_.Remove(IndexOf(qubit, layer));
   parts_array_[IndexOf(qubit, layer)] = Part::kControlBit;
 }
 
 void Circuit::AddAntiControlBit(const GridSize_T qubit, const GridSize_T layer) {
+  AssertInCurrentRange(qubit, layer);
+
   id_to_matrix_.Remove(IndexOf(qubit, layer));
   parts_array_[IndexOf(qubit, layer)] = Part::kAntiControlBit;
 }
 
 void Circuit::AddMeasurement(const GridSize_T qubit, const GridSize_T layer) {
+  AssertInCurrentRange(qubit, layer);
+
   id_to_matrix_.Remove(IndexOf(qubit, layer));
-  parts_array_[IndexOf(qubit, layer)] = Part::kEmpty;
+  parts_array_[IndexOf(qubit, layer)] = Part::kMeasure;
 }
 
 void Circuit::AddSwap(const GridSize_T qubit, const GridSize_T layer) {
+  AssertInCurrentRange(qubit, layer);
+
   // TODO: Check if swap is valid?
   id_to_matrix_.Remove(IndexOf(qubit, layer));
   parts_array_[IndexOf(qubit, layer)] = Part::kSwap;
@@ -63,13 +75,13 @@ void Circuit::Clear() {
 }
 
 Circuit::Part Circuit::GetPartTypeAt(const GridSize_T qubit, const GridSize_T layer) const {
-  AssertInLimit(qubit, layer);
+  AssertInCurrentRange(qubit, layer);
   return GetPartTypeUnsafe(qubit, layer);
 }
 
 const Circuit::Matrix_T *Circuit::GetMatrixAt(const GridSize_T qubit,
                                               const GridSize_T layer) const {
-  AssertInLimit(qubit, layer);
+  AssertInCurrentRange(qubit, layer);
   return GetMatrixUnsafe(qubit, layer);
 }
 
@@ -87,7 +99,7 @@ const Circuit::Matrix_T *Circuit::GetMatrixUnsafe(const GridSize_T qubit,
 }
 
 std::span<Circuit::Part> Circuit::GetPartsInLayer(const GridSize_T layer) {
-  AssertInRange(0, layer);
+  AssertInCurrentRange(0, layer);
 
   const auto arr_begin = parts_array_.begin();
   const auto first = arr_begin + IndexOf(0, layer);
@@ -96,7 +108,7 @@ std::span<Circuit::Part> Circuit::GetPartsInLayer(const GridSize_T layer) {
 }
 
 std::span<const Circuit::Part> Circuit::GetPartsInLayer(const GridSize_T layer) const {
-  AssertInRange(0, layer);
+  AssertInCurrentRange(0, layer);
 
   const auto arr_begin = parts_array_.begin();
   const auto first = arr_begin + IndexOf(0, layer);
@@ -105,7 +117,7 @@ std::span<const Circuit::Part> Circuit::GetPartsInLayer(const GridSize_T layer) 
 }
 
 std::vector<const Circuit::Matrix_T *> Circuit::GetMatricesInLayer(const GridSize_T layer) const {
-  AssertInRange(0, layer);
+  AssertInCurrentRange(0, layer);
 
   std::vector<const Matrix_T *> out(num_qubits_, nullptr);
 

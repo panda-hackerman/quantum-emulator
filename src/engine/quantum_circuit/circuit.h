@@ -81,7 +81,7 @@ protected:
    * throws an exception.
    * @throws std::out_of_range If either parameter is out of bounds.
    */
-  constexpr void AssertInRange(const GridSize_T qubit, const GridSize_T layer) const {
+  constexpr void AssertInCurrentRange(const GridSize_T qubit, const GridSize_T layer) const {
     if (qubit >= num_qubits_ || layer >= num_layers_) {
       throw std::out_of_range(std::format("Qubit {}, Layer {}, is out of range for size ({}, {})!",
                                           qubit, layer, num_qubits_, num_layers_));

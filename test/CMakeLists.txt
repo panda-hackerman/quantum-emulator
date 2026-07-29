@@ -4,7 +4,9 @@ project(EngineTest LANGUAGES CXX)
 add_library(test_vendor INTERFACE)
 target_link_libraries(test_vendor INTERFACE GTest::gtest_main)
 
-add_executable(${PROJECT_NAME} test_main.cc)
+add_executable(${PROJECT_NAME} test_main.cc
+        matrix_test.cc
+        quantum_circuit_test.cc)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE Engine test_vendor)
 
